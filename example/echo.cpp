@@ -59,6 +59,7 @@ int main() {
         return -1;
     }
 
+    // 注册监听套接字的处理类
     std::shared_ptr<PollerEvent> event = std::make_shared<PollerEvent>(server, moxie::kReadEvent);
     if (!loop->Register(event, std::make_shared<Echo>())) {
         LOGGER_ERROR("Loop Register Error");
