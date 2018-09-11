@@ -98,3 +98,11 @@ bool moxie::Socket::SetTcpNodelay(int sock) {
     return true;
 }
 
+bool moxie::Socket::SetReusePort(int sock) {
+    int enable = 1;
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, (void*)&enable, sizeof(enable)) < 0) {
+        LOGGER_SYSERR("setsockopt error : " << ::strerror(errno));
+        return false;
+    }
+    return true;
+}

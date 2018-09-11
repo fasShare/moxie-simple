@@ -15,6 +15,7 @@ namespace Socket {
     int Accept(int sock, NetAddress& addr, bool noblockingexec);
     int Accept(int sock, bool noblockingexec);
     bool SetTcpNodelay(int sock);
+    bool SetReusePort(int sock);
 }
 
 }
