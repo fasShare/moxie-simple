@@ -6,11 +6,12 @@ moxie_base := ./base
 moxie_libs := ./lib
 
 objects := $(patsubst %.cpp, %.o, $(wildcard *.cpp))
+headers := $(wildcard *.h)
 
 moxie:$(objects)
 	ar -crv libmoxie.a $^
-%.o:%.cpp
-	$(CC) -c $^  -I${moxie_base} -I./ -L${moxie_libs} $(cflags) -o $@  $(libs)
+%.o:%.cpp $(headers)
+	$(CC) -c $<  -I${moxie_base} -I./ -L${moxie_libs} $(cflags) -o $@  $(libs)
 
 .PHONY : clean
 clean:
