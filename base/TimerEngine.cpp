@@ -46,7 +46,7 @@ bool moxie::TimerEngine::ResetTd(moxie::Timestamp earlist) {
 
 moxie::Timestamp moxie::TimerEngine::EarlistExpiration() const {
     if (timers_.size() == 0) {
-        return moxie::AddTime(Timestamp::Now(), 1);
+        return moxie::AddTime(Timestamp::Now(), 100);
     } else {
         return timers_.begin()->first;
     }
@@ -65,7 +65,6 @@ void moxie::TimerEngine::ExpiredTimers(std::list<std::pair<moxie::Timestamp,
         expired.push_back(*iter);
     }
     timers_.erase(timers_.begin(), end);
-    std::cout << "expired:" << expired.size() << " timers:" << timers_.size() << std::endl;
 }
 
 int moxie::TimerEngine::TimerFd() const {
