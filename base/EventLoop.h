@@ -8,23 +8,21 @@
 #include <SigIgnore.h>
 #include <Handler.h>
 #include <Epoll.h>
-#include <Mutex.h>
+#include <TimerEngine.h>
 
 namespace moxie {
 
 class EventLoop {
 public:
-    EventLoop() :
-        epoll_(new (std::nothrow) Epoll()),
-        quit_(false) {
-        if (!epoll_) {
-            assert(false);
-        }
-    }
+    EventLoop();
 
     bool Register(const std::shared_ptr<PollerEvent>& event, const std::shared_ptr<Handler>& handler);
     bool Modity(const std::shared_ptr<PollerEvent>&  event);
     bool Delete(const std::shared_ptr<PollerEvent>& event);
+
+    bool RegisterTimer(Timer* timer);
+    bool UnregisterTimer(Timer* timer);
+
     void Loop();
     void Quit();
 private:
@@ -40,6 +38,7 @@ private:
     SigIgnore ignore_;
     static size_t kEpollRetBufSize;
     static size_t kDefaultTimeOut;
+    std::shared_ptr<TimerEngine> te_;
 };
 
 }

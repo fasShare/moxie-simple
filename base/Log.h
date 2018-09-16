@@ -6,7 +6,7 @@
 
 namespace moxie {
 
-#define LOGGER_TRACE(MSG)
+#define LOGGER_TRACE(MSG) (std::cout << MSG << std::endl)
 #define LOGGER_DEBUG(MSG)
 #define LOGGER_INFO(MSG)
 #define LOGGER_WARN(MSG)
