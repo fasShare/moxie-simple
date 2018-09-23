@@ -12,7 +12,6 @@ moxie::ClientHandler::ClientHandler() :
 }
 
 void moxie::ClientHandler::Process(const std::shared_ptr<PollerEvent>& event, EventLoop *loop) {
-    LOGGER_TRACE("Begin ClientHandler Process!");
     if (event->ValatileErrorEvent() || event->ValatileCloseEvent()) {
         loop->Delete(event);
         ::close(event->GetFd());
@@ -29,15 +28,14 @@ void moxie::ClientHandler::Process(const std::shared_ptr<PollerEvent>& event, Ev
 }
 
 void moxie::ClientHandler::DoRead(const std::shared_ptr<PollerEvent>& event, EventLoop *loop) {
-    LOGGER_TRACE("Begin ClientHandler DoRead!");
     int event_fd = event->GetFd();
-    char buf[TMP_BUF_SIZE];
+    int errno_tmp;
     while (true) {
-        int ret = read(event_fd, buf, TMP_BUF_SIZE - 1);
+        int ret = readBuf_.readFd(event_fd, &errno_tmp);
         if (ret < 0) {
-            if (errno == EINTR) {
+            if (errno_tmp == EINTR) {
                 continue;
-            } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            } else if (errno_tmp == EAGAIN || errno_tmp == EWOULDBLOCK) {
                 goto AfterReadLabel;
             } else {
                 loop->Delete(event);
@@ -51,8 +49,6 @@ void moxie::ClientHandler::DoRead(const std::shared_ptr<PollerEvent>& event, Eve
             ::close(event_fd);
             return;
         }
-
-        readBuf_.append(buf, ret);
     }
 
 AfterReadLabel:

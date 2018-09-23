@@ -72,7 +72,6 @@ string moxie::Buffer::retrieveAsString(size_t len) {
     return result;
 }
 
-
 void moxie::Buffer::append(const char* /*restrict*/ data, size_t len) {
     ensureWritableBytes(len);
     std::copy(data, data+len, beginWrite());
@@ -126,5 +125,33 @@ void moxie::Buffer::makeSpace(size_t len) {    //
         assert(readable == readableBytes());
     }
 }
+
+const char* moxie::Buffer::findChars(const char* chars, size_t chars_len) const {
+    const char* pos = std::search(peek(), beginWrite(), chars, chars+chars_len);
+    return pos == beginWrite() ? NULL : pos;
+}
+
+ssize_t moxie::Buffer::readFd(int fd, int* savedErrno) {
+    // saved an ioctl()/FIONREAD call to tell how much to read
+    char extrabuf[65536];
+    struct iovec vec[2];
+    const size_t writable = writableBytes();
+    vec[0].iov_base = begin()+writerIndex_;
+    vec[0].iov_len = writable;
+    vec[1].iov_base = extrabuf;
+    vec[1].iov_len = sizeof extrabuf;
+    const ssize_t n = ::readv(fd, vec, 2);
+    if (n < 0) {
+        *savedErrno = errno;
+    } else if (static_cast<size_t>(n) <= writable) {
+        writerIndex_ += n;
+    } else {
+        writerIndex_ = buffer_.size();
+        append(extrabuf, n - writable);
+    }
+
+    return n;
+}
+
 
 
