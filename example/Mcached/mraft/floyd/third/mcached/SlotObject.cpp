@@ -1,26 +1,18 @@
 #include <mcached/SlotObject.h>
 #include <mcached/MutexLocker.h>
 
-int moxie::SlotObject::ApplyRequest(const std::vector<std::string>& args, std::string& res) {
-    moxie::MutexLocker lock(mutex_);
-    if (args.size() == 3 && (args[0] == "set" || args[0] == "SET")) {
-        db_[args[1]] = args[2];
-        res = "+OK\r\n";
-    } else if (args.size() == 2 && (args[0] == "get" || args[0] == "GET")) {
-        res = db_[args[1]];
-    }
-
-    return 0;
+int moxie::SlotObject::ApplySet(const std::string& key, const std::string& value, std::string& res) {
+    db_[key] = value;
+    res = "+OK\r\n";
+    return moxie::kExecOk;
 }
 
-int moxie::SlotObject::ApplyRequest(const::google::protobuf::RepeatedPtrField<::std::string>& args, std::string& res) {
-    moxie::MutexLocker lock(mutex_);
-    if (args.size() == 3 && (args[0] == "set" || args[0] == "SET")) {
-        db_[args[1]] = args[2];
-        res = "+OK\r\n";
-    } else if (args.size() == 2 && (args[0] == "get" || args[0] == "GET")) {
-        res = db_[args[1]];
+int moxie::SlotObject::ApplyGet(const std::string& key, std::string& res) {
+    auto iter = db_.find(key);
+    if (iter == db_.end()) {
+        return moxie::kNotFoundKey;
     }
 
-    return 0;
+    res = iter->second;
+    return moxie::kExecOk;
 }

@@ -8,25 +8,16 @@
 
 namespace moxie {
 
-class HashFunc {
-public:
-    size_t operator()(const std::string& str) const {
-        return BKDRHash(str.c_str()); 
-    }
-private:
-    size_t BKDRHash(const char *str) const {  
-        register size_t hash = 0;  
-        while (size_t ch = (size_t)*str++) {         
-            hash = hash * 131 + ch; 
-        }  
-        return hash;  
-    } 
-};
+const int32_t kExecOk = 0;
+const int32_t kUnKnowError = -1;
+const int32_t kNotFoundKey = -2;
+const int32_t kExecArgsError = -3;
+const int32_t kExecUnknowCmd = -4;
 
 class SlotObject {
 public:
-    int ApplyRequest(const std::vector<std::string>& args, std::string& res);
-    int ApplyRequest(const::google::protobuf::RepeatedPtrField<::std::string>& args, std::string& res);
+    int ApplySet(const std::string& key, const std::string& value, std::string& res);
+    int ApplyGet(const std::string& key, std::string& res);
 private:
     std::unordered_map<std::string, std::string> db_;
     moxie::Mutex mutex_;
