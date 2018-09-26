@@ -26,7 +26,6 @@ typedef  unsigned long  int  ub4;   /* unsigned 4-byte quantities */
 typedef  unsigned       char ub1;   /* unsigned 1-byte quantities */
 
 /* hard-code one million buckets, for now (2**20 == 4MB hash) */
-#define HASHPOWER  20
 #define hashsize(n) ((ub4)1<<(n))
 #define hashmask(n) (hashsize(n)-1)
 
@@ -122,18 +121,52 @@ moxie::HashTable::HashTable(size_t power, double factor) {
         exit(1);
     }
     this->power = power;
-    this->factor = factor;
+    this->factor = factor < 1 ? 1.1 : factor;
     this->item_count = 0;
     for (size_t i = 0; i < this->hash_size; ++i) {
         this->hashtable[i] = nullptr;
     }
+    this->expand_index = 0;
+    this->is_expand = false;
+    this->new_hashsize = 0;
+    this->new_hashtable = nullptr;
+}
+
+moxie::HashTable::~HashTable() {
+
+    if (this->new_hashtable) {
+        for (uint64_t i = 0; i < this->new_hashsize; ++i) {
+            Item *bucket = this->new_hashtable[i];
+            while (bucket) {
+                bucket = this->remove_from_bucket(bucket, bucket);
+            }
+        }
+        delete[] this->new_hashtable;
+        this->new_hashtable = nullptr;
+    }
+
+    if (this->hashtable) {
+        for (uint64_t i = 0; i < this->hash_size; ++i) {
+            Item *bucket = this->hashtable[i];
+             while (bucket) {
+                bucket = this->remove_from_bucket(bucket, bucket);
+            }
+        }
+        delete[] this->hashtable;
+        this->hashtable = nullptr;
+    }
 }
 
 moxie::Item *moxie::HashTable::item_find(const char *key, uint32_t keylen) {
-    ub4 hv = hash((ub1 *)key, keylen, 0) & hashmask(this->power);
+    ub4 hv = hash_index(key, keylen, this->power);
     
-    std::cout << hv << std::endl;
-    Item *it = this->hashtable[hv];
+    Item *it = nullptr;
+    if (this->is_expand && hv < this->expand_index) {
+        hv = hash_index(key, keylen, this->new_power);
+        it = this->new_hashtable[hv];
+    } else {
+        it = this->hashtable[hv];
+    }
 
     while (it) {
         if ((it->nkey == keylen) && (memcmp(it->ITEM_key(), key, it->nkey)) == 0)
@@ -143,36 +176,163 @@ moxie::Item *moxie::HashTable::item_find(const char *key, uint32_t keylen) {
     return nullptr;
 }
 
+bool moxie::HashTable::expand_table() {
+    if (!is_expand) {
+        this->is_expand = true;
+        this->expand_index = 0;
+        this->new_power = this->power + 1;
+        this->new_hashsize = hashsize(this->new_power);
+        this->new_hashtable = new (std::nothrow) Item*[this->new_hashsize];
+        memset(this->new_hashtable, 0, sizeof(Item *) * this->new_hashsize);
+
+        std::cout << "new_hashsize = " << this->new_hashsize << std::endl;
+        std::cout << "new_power = " << this->new_power << std::endl;
+    }
+
+    int dela = 100;
+    while (dela > 0) {
+        if (expand_index >= this->hash_size) {
+            this->expand_index = 0;
+            this->hash_size = this->new_hashsize;
+            this->new_hashsize = 0;
+            this->is_expand = false;
+            delete[] this->hashtable;
+            this->hashtable = this->new_hashtable;
+            this->new_hashtable = nullptr;
+            this->power = this->new_power;
+            break;
+        }
+
+        // move one bucket
+        Item *bucket_head = this->hashtable[expand_index];
+        while (bucket_head) {
+            Item *cur = bucket_head;
+            bucket_head = cur->h_next;
+
+            ub4 hv = hash_index(cur->ITEM_key(), cur->keylen(), this->new_power);
+            this->new_hashtable[hv] = insert_to_bucket(this->new_hashtable[hv], cur);
+        }
+
+        ++expand_index;
+        --dela;
+    }
+
+    return true;
+}
+
+moxie::Item *moxie::HashTable::get_bucket_from_key(const char *key, uint32_t keylen) {
+    ub4 hv = hash_index(key, keylen, this->power);
+    if (this->is_expand && hv < this->expand_index) {
+        hv = hash_index(key, keylen, this->new_power);
+        Item *bucket = this->new_hashtable[hv];
+        return bucket;
+    }
+    return this->hashtable[hv];
+}
+
+moxie::Item* moxie::HashTable::remove_from_bucket(Item* bucket, Item *item) {
+    if (bucket == item) {
+        bucket = item->h_next;
+        if (bucket) {
+            bucket->h_prev = nullptr;
+        }
+        assert(item->h_prev == nullptr);
+        return bucket;
+    }
+
+    if (item->h_prev == nullptr) {
+        assert(item == bucket);
+        bucket = item->h_next;
+        if (bucket) {
+            bucket->h_prev = nullptr;
+        }
+        return bucket;
+    }
+        
+    Item *cur = bucket->h_next;
+    while (cur) {
+        if (cur == item) {
+            cur->h_prev->h_next = cur->h_next;
+            if (cur->h_next) {
+                cur->h_next->h_prev = cur->h_prev;
+            }
+            cur->h_next = nullptr;
+            cur->h_prev = nullptr;
+            break;
+        }
+        cur = cur->h_next;
+    }
+
+    return bucket;
+}
+
+moxie::Item* moxie::HashTable::insert_to_bucket(Item* bucket, Item *item) {
+    item->h_next = bucket;
+    if (bucket) {
+        bucket->h_prev = item;
+    }
+    item->h_prev = nullptr;
+    bucket = item;
+    item->setflags(ITEM_HASHED);
+    return bucket;
+}
+
 bool moxie::HashTable::item_insert(moxie::Item *item) {
     if (!item) {
         return false;
     }
+
     assert((item_find(item->ITEM_key(), item->keylen()) == nullptr) 
             && !item->hasflags(ITEM_HASHED)
             && item->hasflags(ITEM_ALLOC)); 
-    ub4 hv = hash((ub1 *)item->ITEM_key(), item->keylen(), 0) & hashmask(this->power);
-    item->h_next = hashtable[hv];
-    if (hashtable[hv]) {
-        hashtable[hv]->h_prev = item;
+    ub4 hv = hash_index(item->ITEM_key(), item->keylen(), this->power);
+
+    if (this->is_expand && hv < this->expand_index) {
+        hv = hash_index(item->ITEM_key(), item->keylen(), this->new_power);
+        this->new_hashtable[hv] = insert_to_bucket(this->new_hashtable[hv], item);
+    } else {
+        this->hashtable[hv] = insert_to_bucket(this->hashtable[hv], item);
     }
-    item->h_prev = nullptr;
-    hashtable[hv] = item;
-    item->setflags(ITEM_HASHED);
 
     ++this->item_count;
+
+    if (need_expand()) {
+        expand_table();
+    }
+
     return true;
 }
 
+moxie::Item* moxie::HashTable::item_delete(const char *key, uint32_t keylen) {
+    Item* item = this->item_find(key, keylen);
+    if (item && this->item_delete(item)) {
+        return item;
+    }
+    return nullptr;
+}
+
 bool moxie::HashTable::item_delete(moxie::Item *item) {
+    if (item == nullptr) {
+        return false;
+    }
     assert((item_find(item->ITEM_key(), item->keylen()) != nullptr) 
             && item->hasflags(ITEM_HASHED)
             && item->hasflags(ITEM_ALLOC));
     if (item->h_prev == nullptr) { // first node in double list
-        ub4 hv = hash((ub1 *)item->ITEM_key(), item->keylen(), 0) & hashmask(this->power);
-        hashtable[hv] = item->h_next;
-        if (hashtable[hv]) {
-            hashtable[hv]->h_prev = nullptr; 
-        }
+        ub4 hv = hash_index(item->ITEM_key(), item->keylen(), this->power);
+
+        if (this->is_expand && hv < this->expand_index) {
+            hv = hash_index(item->ITEM_key(), item->keylen(), this->new_power);
+            this->new_hashtable[hv] = item->h_next;
+            if (this->new_hashtable[hv]) {
+                this->new_hashtable[hv]->h_prev = nullptr; 
+            }
+        } else {
+            this->hashtable[hv] = item->h_next;
+            if (this->hashtable[hv]) {
+                this->hashtable[hv]->h_prev = nullptr; 
+            }
+        } 
     } else {
         item->h_prev->h_next = item->h_next;
     }
@@ -182,3 +342,10 @@ bool moxie::HashTable::item_delete(moxie::Item *item) {
     return true;
 }
 
+unsigned long moxie::HashTable::hash_index(const char* key, size_t keylen, size_t power) const {
+    return hash((ub1 *)key, keylen, 0) & hashmask(power);
+}
+
+bool moxie::HashTable::need_expand() const {
+    return this->is_expand || this->item_count > (this->hash_size * this->factor);
+}

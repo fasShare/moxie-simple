@@ -18,6 +18,7 @@ class SlotObject {
 public:
     int ApplySet(const std::string& key, const std::string& value, std::string& res);
     int ApplyGet(const std::string& key, std::string& res);
+    int applyReplace(const std::string& key, const std::string& value, std::string& res);
 private:
     std::unordered_map<std::string, std::string> db_;
     moxie::Mutex mutex_;
