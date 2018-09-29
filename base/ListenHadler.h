@@ -1,6 +1,7 @@
 #ifndef MOXIE_LISTENHADLER_H
 #define MOXIE_LISTENHADLER_H
 #include <Handler.h>
+#include <NetAddress.h>
 
 namespace moxie {
 
@@ -9,7 +10,7 @@ public:
     virtual ~ListenHadler() {}
     virtual void Process(const std::shared_ptr<PollerEvent>& event, EventLoop *loop);
     virtual void DoListen(const std::shared_ptr<PollerEvent>& event, EventLoop *loop);
-    virtual void AfterAcceptSuccess(const std::shared_ptr<PollerEvent>& event, EventLoop *loop) = 0;
+    virtual void AfterAcceptSuccess(const std::shared_ptr<PollerEvent>& event, EventLoop *loop, const std::shared_ptr<moxie::NetAddress>& cad) = 0;
 };
 
 }

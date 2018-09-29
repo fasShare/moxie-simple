@@ -33,7 +33,7 @@ public:
 
 class Echo : public ListenHadler {
 public:
-    virtual void AfterAcceptSuccess(const std::shared_ptr<PollerEvent>& client, EventLoop *loop) {
+    virtual void AfterAcceptSuccess(const std::shared_ptr<PollerEvent>& client, EventLoop *loop, const std::shared_ptr<moxie::NetAddress>& cad) {
         if (!loop->Register(client, std::make_shared<EchoClientHandler>())) {
             ::close(client->GetFd());
             return;

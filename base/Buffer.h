@@ -43,6 +43,11 @@ public:
     char* beginWrite();
     const char* beginWrite() const;
     void hasWritten(size_t len);
+    const char* findChars(const char* chars, size_t chars_len) const;
+
+    ssize_t readFd(int fd, int* savedErrno);
+public:
+    static const char kCRLF[];
 private:
     char* begin();
     const char* begin() const;
@@ -52,7 +57,6 @@ private:
     std::vector<char> buffer_;
     size_t readerIndex_;
     size_t writerIndex_;
-    static const char kCRLF[];
 };
 
 }
