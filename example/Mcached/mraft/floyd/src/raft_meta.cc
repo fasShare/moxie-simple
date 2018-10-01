@@ -26,8 +26,8 @@ static const std::string kLastApplied = "APPLYINDEX";
  */
 static const std::string kFencingToken = "FENCINGTOKEN";
 
-RaftMeta::RaftMeta(rocksdb::DB* db, Logger* info_log)
-  : db_(db),
+RaftMeta::RaftMeta(Logger* info_log)
+  : db_(),
     info_log_(info_log) {
 }
 
@@ -53,101 +53,49 @@ void RaftMeta::Init() {
 }
 
 uint64_t RaftMeta::GetCurrentTerm() {
-  std::string buf;
-  uint64_t ans;
-  rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), kCurrentTerm, &buf);
-  if (s.IsNotFound()) {
-    return 0;
-  }
-  memcpy(&ans, buf.data(), sizeof(uint64_t));
-  return ans;
+  return std::atoll(db_[kCurrentTerm].c_str());
 }
 
 void RaftMeta::SetCurrentTerm(const uint64_t current_term) {
-  char buf[8];
-  memcpy(buf, &current_term, sizeof(uint64_t));
-  db_->Put(rocksdb::WriteOptions(), kCurrentTerm, std::string(buf, 8));
-  return;
+  db_[kCurrentTerm] = std::to_string(current_term);
 }
 
 std::string RaftMeta::GetVotedForIp() {
-  std::string buf;
-  rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), kVoteForIp, &buf);
-  if (s.IsNotFound()) {
-    return std::string("");
-  }
-  return buf;
+  return db_[kVoteForIp];
 }
 
 void RaftMeta::SetVotedForIp(const std::string ip) {
-  db_->Put(rocksdb::WriteOptions(), kVoteForIp, ip);
-  return;
+  db_[kVoteForIp] = ip;
 }
 
 int RaftMeta::GetVotedForPort() {
-  std::string buf;
-  int ans;
-  rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), kVoteForPort, &buf);
-  if (s.IsNotFound()) {
-    return 0;
-  }
-  memcpy(&ans, buf.data(), sizeof(int));
-  return ans;
+  return std::atoi(db_[kVoteForPort].c_str());
 }
 
 void RaftMeta::SetVotedForPort(const int port) {
-  char buf[4];
-  memcpy(buf, &port, sizeof(int));
-  db_->Put(rocksdb::WriteOptions(), kVoteForPort, std::string(buf, sizeof(int)));
-  return;
+  db_[kVoteForPort] = std::to_string(port);
 }
 
 uint64_t RaftMeta::GetCommitIndex() {
-  std::string buf;
-  uint64_t ans;
-  rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), kCommitIndex, &buf);
-  if (s.IsNotFound()) {
-    return 0;
-  }
-  memcpy(&ans, buf.data(), sizeof(uint64_t));
-  return ans;
+  return std::atoll(db_[kCommitIndex].c_str());
 }
 
 void RaftMeta::SetCommitIndex(uint64_t commit_index) {
-  char buf[8];
-  memcpy(buf, &commit_index, sizeof(uint64_t));
-  db_->Put(rocksdb::WriteOptions(), kCommitIndex, std::string(buf, 8));
+  db_[kCommitIndex] = std::to_string(commit_index);
 }
 
 uint64_t RaftMeta::GetLastApplied() {
-  std::string buf;
-  uint64_t ans;
-  rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), kLastApplied, &buf);
-  if (s.IsNotFound()) {
-    return 0;
-  }
-  memcpy(&ans, buf.data(), sizeof(uint64_t));
-  return ans;
+  return std::atoll(db_[kLastApplied].c_str());
 }
 
 void RaftMeta::SetLastApplied(uint64_t last_applied) {
-  char buf[8];
-  memcpy(buf, &last_applied, sizeof(uint64_t));
-  db_->Put(rocksdb::WriteOptions(), kLastApplied, std::string(buf, 8));
+  db_[kLastApplied] = std::to_string(last_applied);
 }
 
 uint64_t RaftMeta::GetNewFencingToken() {
-  std::string buf;
-  uint64_t ans;
-  rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), kFencingToken, &buf);
-  if (s.IsNotFound()) {
-    ans = 0;
-  }
-  memcpy(&ans, buf.data(), sizeof(uint64_t));
+  uint64_t ans = std::atoll(db_[kFencingToken].c_str());
   ans++;
-  char wbuf[8];
-  memcpy(wbuf, &ans, sizeof(uint64_t));
-  db_->Put(rocksdb::WriteOptions(), kFencingToken, std::string(wbuf, 8));
+  db_[kFencingToken] = std::to_string(ans);
   return ans;
 }
 

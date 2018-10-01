@@ -23,7 +23,7 @@ enum {
 
 struct Options {
   // cluster members
-  // parsed from comma separated ip1:port1,ip2:port2...
+  // parsed from command separated ip1:port1,ip2:port2...
   std::vector<std::string> members;
   std::string local_ip;
   int local_port;

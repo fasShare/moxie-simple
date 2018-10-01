@@ -109,64 +109,6 @@ rocksdb::Status FloydApply::Apply(const Entry& entry) {
       impl_->ApplyMcached(entry.args(), val);
       LOGV(DEBUG_LEVEL, info_log_, "FloydApply::Apply mecached!");
       break;
-    case Entry_OpType_kWrite:
-      ret = db_->Put(rocksdb::WriteOptions(), entry.key(), entry.value());
-      LOGV(DEBUG_LEVEL, info_log_, "FloydApply::Apply %s, key(%s)",
-          ret.ToString().c_str(), entry.key().c_str());
-      break;
-    case Entry_OpType_kDelete:
-      ret = db_->Delete(rocksdb::WriteOptions(), entry.key());
-      break;
-    case Entry_OpType_kRead:
-      ret = rocksdb::Status::OK();
-      break;
-    case Entry_OpType_kTryLock:
-      ret = db_->Get(rocksdb::ReadOptions(), entry.key(), &val);
-      if (ret.ok()) {
-        lock.ParseFromString(val);
-        if (lock.lease_end() < slash::NowMicros()) {
-          LOGV(INFO_LEVEL, info_log_, "FloydApply::Apply Trylock Success, name %s holder %s, "
-              "but the lock has been locked by %s, and right now it is timeout",
-              entry.key().c_str(), entry.holder().c_str(), lock.holder().c_str());
-          lock.set_holder(entry.holder());
-          lock.set_lease_end(entry.lease_end());
-          lock.SerializeToString(&val);
-          ret = db_->Put(rocksdb::WriteOptions(), entry.key(), val);
-        } else {
-          ret = rocksdb::Status::OK();
-        }
-      } else if (ret.IsNotFound()) {
-        lock.set_holder(entry.holder());
-        lock.set_lease_end(entry.lease_end());
-        lock.SerializeToString(&val);
-        ret = db_->Put(rocksdb::WriteOptions(), entry.key(), val);
-      } else {
-        LOGV(WARN_LEVEL, info_log_, "FloydImpl::Apply Trylock Error operate db error, name %s holder %s",
-            entry.key().c_str(), entry.holder().c_str());
-      }
-      break;
-    case Entry_OpType_kUnLock:
-      ret = db_->Get(rocksdb::ReadOptions(), entry.key(), &val);
-      if (ret.ok()) {
-        lock.ParseFromString(val);
-        if (lock.holder() != entry.holder()) {
-          LOGV(INFO_LEVEL, info_log_, "FloydApply::Apply Warning UnLock an lock holded by other, name %s holder %s, origin holder %s",
-              entry.key().c_str(), entry.holder().c_str(), lock.holder().c_str());
-        } else if (lock.lease_end() < slash::NowMicros()) {
-          LOGV(INFO_LEVEL, info_log_, "FloydImpl::Apply UnLock an lock which is expired, name %s holder %s",
-              entry.key().c_str(), entry.holder().c_str(), lock.holder().c_str());
-        } else {
-          ret = db_->Delete(rocksdb::WriteOptions(), entry.key());
-        }
-      } else if (ret.IsNotFound()) {
-        LOGV(INFO_LEVEL, info_log_, "FloydApply::Apply Warning UnLock an dosen't exist lock, name %s holder %s",
-            entry.key().c_str(), entry.holder().c_str());
-        ret = rocksdb::Status::OK();
-      } else {
-        LOGV(WARN_LEVEL, info_log_, "FloydApply::Apply UnLock Error, operate db error, name %s holder %s",
-            entry.key().c_str(), entry.holder().c_str());
-      }
-      break;
     case Entry_OpType_kAddServer:
       ret = MembershipChange(entry.server(), true);
       if (ret.ok()) {

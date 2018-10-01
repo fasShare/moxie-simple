@@ -29,52 +29,6 @@
 
 namespace floyd {
 
-static void BuildReadRequest(const std::string& key, CmdRequest* cmd) {
-  cmd->set_type(Type::kRead);
-  CmdRequest_KvRequest* kv_request = cmd->mutable_kv_request();
-  kv_request->set_key(key);
-}
-
-static void BuildReadResponse(const std::string &key, const std::string &value,
-                              StatusCode code, CmdResponse* response) {
-  response->set_code(code);
-  CmdResponse_KvResponse* kv_response = response->mutable_kv_response();
-  if (code == StatusCode::kOk) {
-    kv_response->set_value(value);
-  }
-}
-
-static void BuildWriteRequest(const std::string& key,
-                              const std::string& value, CmdRequest* cmd) {
-  cmd->set_type(Type::kWrite);
-  CmdRequest_KvRequest* kv_request = cmd->mutable_kv_request();
-  kv_request->set_key(key);
-  kv_request->set_value(value);
-}
-
-static void BuildDeleteRequest(const std::string& key, CmdRequest* cmd) {
-  cmd->set_type(Type::kDelete);
-  CmdRequest_KvRequest* kv_request = cmd->mutable_kv_request();
-  kv_request->set_key(key);
-}
-
-static void BuildTryLockRequest(const std::string& name, const std::string& holder, uint64_t ttl,
-                              CmdRequest* cmd) {
-  cmd->set_type(Type::kTryLock);
-  CmdRequest_LockRequest* lock_request = cmd->mutable_lock_request();
-  lock_request->set_name(name);
-  lock_request->set_holder(holder);
-  lock_request->set_lease_end(slash::NowMicros() + ttl * 1000);
-}
-
-static void BuildUnLockRequest(const std::string& name, const std::string& holder,
-                              CmdRequest* cmd) {
-  cmd->set_type(Type::kUnLock);
-  CmdRequest_LockRequest* lock_request = cmd->mutable_lock_request();
-  lock_request->set_name(name);
-  lock_request->set_holder(holder);
-}
-
 static void BuildAddServerRequest(const std::string& new_server, CmdRequest* cmd) {
   cmd->set_type(Type::kAddServer);
   CmdRequest_AddServerRequest* add_server_request = cmd->mutable_add_server_request();
@@ -126,36 +80,13 @@ static void BuildAppendEntriesResponse(bool succ, uint64_t term,
 
 static void BuildLogEntry(const CmdRequest& cmd, uint64_t current_term, Entry* entry) {
   entry->set_term(current_term);
-
   // for mcached
-    
   if (cmd.type() == Type::kMcachedRead) {
     entry->set_optype(Entry_OpType_kMcachedRead);
     entry->mutable_args()->CopyFrom(cmd.mcached_request().args());
-    return;
   } else if (cmd.type() == Type::kMcachedWrite) {
     entry->set_optype(Entry_OpType_kMcachedWrite);
     entry->mutable_args()->CopyFrom(cmd.mcached_request().args());
-    return ;
-  } 
-
-  entry->set_key(cmd.kv_request().key());
-  entry->set_value(cmd.kv_request().value());
-  if (cmd.type() == Type::kRead) {
-    entry->set_optype(Entry_OpType_kRead);
-  } else if (cmd.type() == Type::kWrite) {
-    entry->set_optype(Entry_OpType_kWrite);
-  } else if (cmd.type() == Type::kDelete) {
-    entry->set_optype(Entry_OpType_kDelete);
-  } else if (cmd.type() == Type::kTryLock) {
-    entry->set_optype(Entry_OpType_kTryLock);
-    entry->set_key(cmd.lock_request().name());
-    entry->set_holder(cmd.lock_request().holder());
-    entry->set_lease_end(cmd.lock_request().lease_end());
-  } else if (cmd.type() == Type::kUnLock) {
-    entry->set_optype(Entry_OpType_kUnLock);
-    entry->set_key(cmd.lock_request().name());
-    entry->set_holder(cmd.lock_request().holder());
   } else if (cmd.type() == Type::kAddServer) {
     entry->set_optype(Entry_OpType_kAddServer);
     entry->set_server(cmd.add_server_request().new_server());
@@ -167,8 +98,7 @@ static void BuildLogEntry(const CmdRequest& cmd, uint64_t current_term, Entry* e
   }
 }
 
-static void BuildMembership(const std::vector<std::string>& opt_members,
-    Membership* members) {
+static void BuildMembership(const std::vector<std::string>& opt_members, Membership* members) {
   members->Clear();
   for (const auto& m : opt_members) {
     members->add_nodes(m);
@@ -178,7 +108,6 @@ static void BuildMembership(const std::vector<std::string>& opt_members,
 FloydImpl::FloydImpl(const Options& options)
   : cached_(NULL),
     db_(NULL),
-    log_and_meta_(NULL),
     options_(options),
     info_log_(NULL) {
 }
@@ -201,7 +130,6 @@ FloydImpl::~FloydImpl() {
   delete raft_log_;
   delete info_log_;
   delete db_;
-  delete log_and_meta_;
 }
 
 bool FloydImpl::IsSelf(const std::string& ip_port) {
@@ -322,15 +250,9 @@ Status FloydImpl::Init() {
     return Status::Corruption("Open DB failed, " + s.ToString());
   }
 
-  s = rocksdb::DB::Open(options, options_.path + "/log/", &log_and_meta_);
-  if (!s.ok()) {
-    LOGV(ERROR_LEVEL, info_log_, "Open DB log_and_meta failed! path: %s", options_.path.c_str());
-    return Status::Corruption("Open DB log_and_meta failed, " + s.ToString());
-  }
-
   // Recover Context
-  raft_log_ = new RaftLog(log_and_meta_, info_log_);
-  raft_meta_ = new RaftMeta(log_and_meta_, info_log_);
+  raft_log_ = new RaftLog(info_log_);
+  raft_meta_ = new RaftMeta(info_log_);
   raft_meta_->Init();
   context_ = new FloydContext(options_);
   context_->RecoverInit(raft_meta_);
@@ -412,90 +334,6 @@ Status Floyd::Open(const Options& options, Floyd** floyd) {
 Floyd::~Floyd() {
 }
 
-Status FloydImpl::Write(const std::string& key, const std::string& value) {
-  CmdRequest cmd;
-  BuildWriteRequest(key, value, &cmd);
-  CmdResponse response;
-  Status s = DoCommand(cmd, &response);
-  if (!s.ok()) {
-    return s;
-  }
-  if (response.code() == StatusCode::kOk) {
-    return Status::OK();
-  }
-  return Status::Corruption("Write Error");
-}
-
-Status FloydImpl::Delete(const std::string& key) {
-  CmdRequest cmd;
-  BuildDeleteRequest(key, &cmd);
-  CmdResponse response;
-  Status s = DoCommand(cmd, &response);
-  if (!s.ok()) {
-    return s;
-  }
-  if (response.code() == StatusCode::kOk) {
-    return Status::OK();
-  }
-  return Status::Corruption("Delete Error");
-}
-
-Status FloydImpl::Read(const std::string& key, std::string* value) {
-  CmdRequest request;
-  BuildReadRequest(key, &request);
-  CmdResponse response;
-  Status s = DoCommand(request, &response);
-  if (!s.ok()) {
-    return s;
-  }
-  if (response.code() == StatusCode::kOk) {
-    *value = response.kv_response().value();
-    return Status::OK();
-  } else if (response.code() == StatusCode::kNotFound) {
-    return Status::NotFound("not found the key");
-  } else {
-    return Status::Corruption("Read Error");
-  }
-}
-
-Status FloydImpl::DirtyRead(const std::string& key, std::string* value) {
-  rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), key, value);
-  if (s.ok()) {
-    return Status::OK();
-  } else if (s.IsNotFound()) {
-    return Status::NotFound("");
-  }
-  return Status::Corruption(s.ToString());
-}
-
-Status FloydImpl::TryLock(const std::string& name, const std::string& holder, uint64_t ttl) {
-  CmdRequest request;
-  BuildTryLockRequest(name, holder, ttl, &request);
-  CmdResponse response;
-  Status s = DoCommand(request, &response);
-  if (!s.ok()) {
-    return s;
-  }
-  if (response.code() == StatusCode::kOk) {
-    return Status::OK();
-  }
-  return Status::Corruption("Lock Error");
-}
-
-Status FloydImpl::UnLock(const std::string& name, const std::string& holder) {
-  CmdRequest request;
-  BuildUnLockRequest(name, holder, &request);
-  CmdResponse response;
-  Status s = DoCommand(request, &response);
-  if (!s.ok()) {
-    return s;
-  }
-  if (response.code() == StatusCode::kOk) {
-    return Status::OK();
-  }
-  return Status::Corruption("UnLock Error");
-}
-
 Status FloydImpl::AddServer(const std::string& new_server) {
   CmdRequest request;
   BuildAddServerRequest(new_server, &request);
@@ -573,9 +411,9 @@ Status FloydImpl::DoCommand(const CmdRequest& request, CmdResponse *response) {
   std::string leader_ip;
   int leader_port;
   {
-  slash::MutexLock l(&context_->global_mu);
-  leader_ip = context_->leader_ip;
-  leader_port = context_->leader_port;
+    slash::MutexLock l(&context_->global_mu);
+    leader_ip = context_->leader_ip;
+    leader_port = context_->leader_port;
   }
   if (options_.local_ip == leader_ip && options_.local_port == leader_port) {
     return ExecuteCommand(request, response);
@@ -655,13 +493,14 @@ Status FloydImpl::ExecMcached(const std::vector<std::string>& args, std::string&
     return Status::Corruption("ExecMcached args is Zero Error");
   }
   // The read operations of Mcached, needn't send to cluster
+  /*
   if (cached_->IsReadOnly(args[0]) || options_.single_mode) {
     if (cached_->ExecuteCommand(args, res) != 0) {
       return Status::Corruption("ExecMcached Error");
     }
     return Status::OK();
   }
-
+  */
   CmdRequest cmd;
   BuildExecMcachedRequest(args, &cmd);
   CmdResponse response;
@@ -671,10 +510,11 @@ Status FloydImpl::ExecMcached(const std::vector<std::string>& args, std::string&
   } else {
     res = response.mcached_response().value();
   }
+  std::cout << "res:" << res << std::endl;
   if (response.code() == StatusCode::kOk) {
     return Status::OK();
   }
-  return Status::Corruption("ExecMcached Error");
+  return Status::Corruption("ExecMcached Error_515");
 }
 
 Status FloydImpl::ExecuteCommand(const CmdRequest& request,
@@ -725,44 +565,12 @@ Status FloydImpl::ExecuteCommand(const CmdRequest& request,
       }
       break;
     case Type::kMcachedWrite:
-      response->set_code(StatusCode::kOk);
-      break;
-    case Type::kWrite:
-      response->set_code(StatusCode::kOk);
-      break;
-    case Type::kDelete:
-      response->set_code(StatusCode::kOk);
-      break;
-    case Type::kRead:
-      rs = db_->Get(rocksdb::ReadOptions(), request.kv_request().key(), &value);
-      if (rs.ok()) {
-        BuildReadResponse(request.kv_request().key(), value, StatusCode::kOk, response);
-      } else if (rs.IsNotFound()) {
-        BuildReadResponse(request.kv_request().key(), value, StatusCode::kNotFound, response);
-      } else {
-        BuildReadResponse(request.kv_request().key(), value, StatusCode::kError, response);
-        return Status::Corruption("get key error");
-      }
-      LOGV(DEBUG_LEVEL, info_log_, "FloydImpl::ExecuteCommand Read %s, key(%s) value(%s)",
-           rs.ToString().c_str(), request.kv_request().key().c_str(), value.c_str());
-      break;
-    case Type::kTryLock:
-      rs = db_->Get(rocksdb::ReadOptions(), request.lock_request().name(), &value);
-      if (rs.ok()) {
-        lock.ParseFromString(value);
-        if (lock.holder() == request.lock_request().holder() && lock.lease_end() == request.lock_request().lease_end()) {
-          response->set_code(StatusCode::kOk);
-        }
-      } else {
-        response->set_code(StatusCode::kLocked);
-      }
-      break;
-    case Type::kUnLock:
-      rs = db_->Get(rocksdb::ReadOptions(), request.lock_request().name(), &value);
-      if (rs.IsNotFound()) {
+      if (cached_->ExecuteCommand(request.mcached_request().args(), value) == 0) {
         response->set_code(StatusCode::kOk);
+        CmdResponse_McachedResponse *rres = response->mutable_mcached_response();
+        rres->set_value(value);
       } else {
-        response->set_code(StatusCode::kLocked);
+        response->set_code(StatusCode::kError);
       }
       break;
     case Type::kAddServer:

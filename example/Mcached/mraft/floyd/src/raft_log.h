@@ -11,8 +11,8 @@
 #include <atomic>
 #include <string>
 #include <vector>
+#include <map>
 
-#include "rocksdb/db.h"
 #include "slash/include/slash_mutex.h"
 
 namespace floyd {
@@ -22,7 +22,7 @@ class Entry;
 
 class RaftLog {
  public:
-  RaftLog(rocksdb::DB* db, Logger* info_log);
+  RaftLog(Logger* info_log);
   ~RaftLog();
 
   uint64_t Append(const std::vector<const Entry *> &entries);
@@ -34,7 +34,7 @@ class RaftLog {
   int TruncateSuffix(uint64_t index);
 
  private:
-  rocksdb::DB* const db_;
+  std::map<uint64_t, std::string> db_;
   Logger* const info_log_;
   /*
    * mutex for last_log_index_

@@ -52,31 +52,6 @@ int FloydWorkerConn::DealMessage() {
       response_.set_code(StatusCode::kError);
       floyd_->DoCommand(request_, &response_);
       break;
-    case Type::kWrite:
-      response_.set_type(Type::kWrite);
-      response_.set_code(StatusCode::kError);
-      floyd_->DoCommand(request_, &response_);
-      break;
-    case Type::kDelete:
-      response_.set_type(Type::kDelete);
-      response_.set_code(StatusCode::kError);
-      floyd_->DoCommand(request_, &response_);
-      break;
-    case Type::kRead:
-      response_.set_type(Type::kRead);
-      response_.set_code(StatusCode::kError);
-      floyd_->DoCommand(request_, &response_);
-      break;
-    case Type::kTryLock:
-      response_.set_type(Type::kTryLock);
-      response_.set_code(StatusCode::kError);
-      floyd_->DoCommand(request_, &response_);
-      break;
-    case Type::kUnLock:
-      response_.set_type(Type::kUnLock);
-      response_.set_code(StatusCode::kError);
-      floyd_->DoCommand(request_, &response_);
-      break;
     case Type::kServerStatus:
       response_.set_type(Type::kRead);
       break;

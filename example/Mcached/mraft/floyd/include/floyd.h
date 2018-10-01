@@ -19,17 +19,8 @@ using slash::Status;
 class Floyd  {
  public:
   static Status Open(const Options& options, Floyd** floyd);
-
   Floyd() { }
   virtual ~Floyd();
-
-  virtual Status Write(const std::string& key, const std::string& value) = 0;
-  virtual Status Delete(const std::string& key) = 0;
-  virtual Status Read(const std::string& key, std::string* value) = 0;
-  virtual Status DirtyRead(const std::string& key, std::string* value) = 0;
-  // ttl is millisecond
-  virtual Status TryLock(const std::string& name, const std::string& holder, uint64_t ttl) = 0;
-  virtual Status UnLock(const std::string& name, const std::string& holder) = 0;
 
   // membership change interface
   virtual Status AddServer(const std::string& new_server) = 0;
