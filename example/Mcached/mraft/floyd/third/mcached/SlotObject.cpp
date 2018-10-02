@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <mcached/SlotObject.h>
 #include <mcached/MutexLocker.h>
 

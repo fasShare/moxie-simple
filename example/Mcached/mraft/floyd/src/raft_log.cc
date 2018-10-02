@@ -32,23 +32,10 @@ extern uint64_t BitStrToUint(const std::string &str) {
   return be64toh(num);
 }
 
-RaftLog::RaftLog(rocksdb::DB *db, Logger *info_log) :
-  db_(db),
+RaftLog::RaftLog(Logger *info_log) :
+  db_(),
   info_log_(info_log),
   last_log_index_(0) {
-  rocksdb::Iterator *it = db_->NewIterator(rocksdb::ReadOptions());
-  it->SeekToLast();
-  if (it->Valid()) {
-    it->Prev();
-    it->Prev();
-    it->Prev();
-    it->Prev();
-    it->Prev();
-    if (it->Valid()) {
-      last_log_index_ = BitStrToUint(it->key().ToString());
-    }
-  }
-  delete it;
 }
 
 RaftLog::~RaftLog() {
@@ -56,21 +43,14 @@ RaftLog::~RaftLog() {
 
 uint64_t RaftLog::Append(const std::vector<const Entry *> &entries) {
   slash::MutexLock l(&lli_mutex_);
-  rocksdb::WriteBatch wb;
+  
   LOGV(DEBUG_LEVEL, info_log_, "RaftLog::Append: entries.size %lld", entries.size());
   // try to commit entries in one batch
   for (size_t i = 0; i < entries.size(); i++) {
     std::string buf;
     entries[i]->SerializeToString(&buf);
     last_log_index_++;
-    wb.Put(UintToBitStr(last_log_index_), buf);
-  }
-  rocksdb::Status s;
-  s = db_->Write(rocksdb::WriteOptions(), &wb);
-  if (!s.ok()) {
-    last_log_index_ -= entries.size();
-    LOGV(ERROR_LEVEL, info_log_, "RaftLog::Append append entries failed, entries size %u, last_log_index_ is %lu",
-        entries.size(), last_log_index_);
+    db_[last_log_index_] = buf;
   }
   return last_log_index_;
 }
@@ -81,15 +61,12 @@ uint64_t RaftLog::GetLastLogIndex() {
 
 int RaftLog::GetEntry(const uint64_t index, Entry *entry) {
   slash::MutexLock l(&lli_mutex_);
-  std::string buf = UintToBitStr(index);
-  std::string res;
-  rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), buf, &res);
-  if (s.IsNotFound()) {
+  if (db_.count(index) == 0) {
     LOGV(ERROR_LEVEL, info_log_, "RaftLog::GetEntry: GetEntry not found, index is %lld", index);
     entry = NULL;
     return 1;
   }
-  entry->ParseFromString(res);
+  entry->ParseFromString(db_[index]);
   return 0;
 }
 
@@ -100,15 +77,13 @@ bool RaftLog::GetLastLogTermAndIndex(uint64_t* last_log_term, uint64_t* last_log
     *last_log_term = 0;
     return true;
   }
-  std::string buf;
-  rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), UintToBitStr(last_log_index_), &buf);
-  if (!s.ok() || s.IsNotFound()) {
+  if (db_.count(last_log_index_) == 0) {
     *last_log_index = 0;
     *last_log_term = 0;
     return true;
   }
   Entry entry;
-  entry.ParseFromString(buf);
+  entry.ParseFromString(db_[last_log_index_]);
   *last_log_index = last_log_index_;
   *last_log_term = entry.term();
   return true;
@@ -120,16 +95,9 @@ bool RaftLog::GetLastLogTermAndIndex(uint64_t* last_log_term, uint64_t* last_log
 int RaftLog::TruncateSuffix(uint64_t index) {
   // we need to delete the unnecessary entry, since we don't store
   // last_log_index in rocksdb
-  rocksdb::WriteBatch batch;
   for (; last_log_index_ >= index; last_log_index_--) {
-    batch.Delete(UintToBitStr(last_log_index_));
-  }
-  if (batch.Count() > 0) {
-    rocksdb::Status s = db_->Write(rocksdb::WriteOptions(), &batch);
-    if (!s.ok()) {
-      LOGV(ERROR_LEVEL, info_log_, "RaftLog::TruncateSuffix Error last_log_index %lu "
-          "truncate from %lu", last_log_index_, index);
-      return -1;
+    if (db_.count(last_log_index_) == 1) {
+      db_.erase(last_log_index_);
     }
   }
   return 0;

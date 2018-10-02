@@ -8,8 +8,7 @@
 
 #include <pthread.h>
 #include <string>
-
-#include "rocksdb/db.h"
+#include <unordered_map>
 
 #include "floyd/include/floyd_options.h"
 #include "slash/include/slash_status.h"
@@ -36,7 +35,7 @@ class Logger;
  */
 class RaftMeta {
  public:
-  RaftMeta(rocksdb::DB *db, Logger* info_log);
+  RaftMeta(Logger* info_log);
   ~RaftMeta();
 
   void Init();
@@ -58,8 +57,7 @@ class RaftMeta {
 
   uint64_t GetNewFencingToken();
  private:
-  // db used to data that need to be persistent
-  rocksdb::DB * const db_;
+  std::unordered_map<std::string, std::string> db_;
   // used to debug
   Logger* info_log_;
 

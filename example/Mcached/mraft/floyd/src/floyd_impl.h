@@ -15,6 +15,7 @@
 #include "slash/include/slash_mutex.h"
 #include "slash/include/slash_status.h"
 #include "pink/include/bg_thread.h"
+#include "rocksdb/db.h"
 #include "mcached/Mcached.h"
 
 #include "floyd/include/floyd.h"
@@ -48,14 +49,6 @@ class FloydImpl : public Floyd {
   virtual ~FloydImpl();
 
   Status Init();
-
-  virtual Status Write(const std::string& key, const std::string& value);
-  virtual Status Delete(const std::string& key);
-  virtual Status Read(const std::string& key, std::string* value);
-  virtual Status DirtyRead(const std::string& key, std::string* value);
-  // ttl is millisecond
-  virtual Status TryLock(const std::string& name, const std::string& holder, uint64_t ttl) override;
-  virtual Status UnLock(const std::string& name, const std::string& holder) override;
 
   // membership change interface
   virtual Status AddServer(const std::string& new_server) override;
@@ -92,12 +85,10 @@ class FloydImpl : public Floyd {
   rocksdb::DB* db_;
   // state machine db point
   // raft log
-  rocksdb::DB* log_and_meta_;  // used to store logs and meta data
   RaftLog* raft_log_;
   RaftMeta* raft_meta_;
 
   Options options_;
-  // debug log used for ouput to file
   Logger* info_log_;
 
   FloydContext* context_;
