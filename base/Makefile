@@ -10,7 +10,6 @@ headers := $(wildcard *.h)
 
 moxie:$(objects)
 	ar -crv libmoxie.a $^
-	mv libmoxie.a ../lib
 %.o:%.cpp $(headers)
 	$(CC) -c $<  -I${moxie_base} -I./ -L${moxie_libs} $(cflags) -o $@  $(libs)
 

@@ -2,7 +2,7 @@ libs := -lmoxie -lfloyd -lslash -lpink -lmcached -lprotobuf -lrocksdb -ltcmalloc
 cflags := -O2 -std=c++11 -static -Wall
 CC = g++
 
-LDDIR += -L../../lib \
+LDDIR += -L../../base \
 		 -L./mraft/floyd/lib \
 		 -L./mraft/floyd/third/mcached \
 		 -L./mraft/floyd/third/pink/pink/lib \

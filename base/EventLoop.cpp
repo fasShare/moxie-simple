@@ -76,7 +76,7 @@ bool moxie::EventLoop::Delete(const std::shared_ptr<PollerEvent>& event) {
     EventContext *context = contexts_[event_fd];
     assert(contexts_.erase(event_fd) == 1);
     delete context;
-    ::close(event_fd);
+
     return true;
 }
 

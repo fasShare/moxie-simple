@@ -7,6 +7,7 @@
 #define FLOYD_SRC_FLOYD_APPLY_H_
 
 #include "floyd/src/floyd_context.h"
+#include "rocksdb/db.h"
 #include "slash/include/slash_status.h"
 #include "pink/include/bg_thread.h"
 

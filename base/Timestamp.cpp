@@ -38,21 +38,10 @@ std::string moxie::Timestamp::ToFormattedString() const {
 }
 
 moxie::Timestamp moxie::Timestamp::Now() {
-    return moxie::Timestamp(Timestamp::MacroSeconds());
-}
-
-uint64_t moxie::Timestamp::NanoSeconds() {
-    struct timespec tn;
-    clock_gettime(CLOCK_REALTIME, &tn);
-    int64_t seconds = tn.tv_sec;
-    return seconds * kNanoSecondsPerSecond + tn.tv_nsec;
-}
-
-uint64_t moxie::Timestamp::MacroSeconds() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     int64_t seconds = tv.tv_sec;
-    return seconds * kMicroSecondsPerSecond + tv.tv_usec;
+    return moxie::Timestamp(seconds * kMicroSecondsPerSecond + tv.tv_usec);
 }
 
 moxie::Timestamp moxie::Timestamp::Invalid() {
