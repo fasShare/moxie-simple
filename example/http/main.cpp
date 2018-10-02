@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <atomic>
+#include <functional>
 
 #include <EventLoop.h>
 #include <string.h>
@@ -20,6 +21,18 @@ struct WorkContext {
     short port;
     std::string ip;
 };
+
+void ProcessGet(HttpRequest& request, HttpResponse& response) {
+    response.SetScode("200");
+    response.SetStatus("OK");
+    response.SetVersion(request.GetVersion());
+    
+    std::string content = "<html><body>  GET Request OK!  </body></html>";
+    response.AppendBody(content.c_str(), content.size());
+
+    response.PutHeaderItem("Content-Type", "text/html");
+    response.PutHeaderItem("Content-Length", std::to_string(content.size()));
+}
 
 void *StartMcached(void *data) {
     if (!data) {
@@ -49,7 +62,11 @@ void *StartMcached(void *data) {
 
     // 注册监听套接字的处理类
     std::shared_ptr<PollerEvent> event = std::make_shared<PollerEvent>(server, moxie::kReadEvent);
-    if (!loop->Register(event, std::make_shared<HttpServer>())) {
+    auto http_server = std::make_shared<HttpServer>();
+    
+    http_server->RegisterMethodCallback("GET", ProcessGet);
+   
+    if (!loop->Register(event, http_server)) {
         LOGGER_ERROR("Loop Register Error");
         return nullptr;
     }
@@ -60,13 +77,9 @@ void *StartMcached(void *data) {
     return nullptr;
 }
 
-#ifndef THREAD_NUM
-#define THREAD_NUM 4
-#endif 
-
 int main(int argc, char **argv) {
-    if (argc < 3) {
-        std::cout << "Usage:HttpServer 127.0.0.1 8899" << std::endl; 
+    if (argc < 4) {
+        std::cout << "Usage:HttpServer 127.0.0.1 8899 thread_num" << std::endl; 
         return -1;
     }
 
@@ -79,8 +92,10 @@ int main(int argc, char **argv) {
     ctx->port = std::atoi(argv[2]);
     ctx->ip = argv[1];
     
-    std::vector<pthread_t> thds; thds.reserve(THREAD_NUM);
-    for (int i = 0; i < THREAD_NUM; ++i) {
+    int thread_num = std::atoi(argv[3]);
+    assert(thread_num > 0);
+    std::vector<pthread_t> thds; thds.reserve(static_cast<size_t>(thread_num));
+    for (int i = 0; i < thread_num; ++i) {
         pthread_t td;
         if (pthread_create(&td, nullptr, StartMcached, ctx) < 0) {
             LOGGER_ERROR("Pthread_create failed!");

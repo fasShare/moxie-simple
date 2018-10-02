@@ -4,18 +4,35 @@
 
 moxie::HttpClientHandler::HttpClientHandler(const std::shared_ptr<PollerEvent>& client,  const std::shared_ptr<moxie::NetAddress>& cad) :
     event_(client),
-    peer_(cad),
-    state_(STATE_HTTPREQUEST_BEGIN) {
+    peer_(cad) {
+}
+
+void moxie::HttpClientHandler::SetMethods(const std::map<std::string, std::function<void (moxie::HttpRequest&, moxie::HttpResponse&)>>& method) {
+    this->method_ = method;
 }
 
 void moxie::HttpClientHandler::AfetrRead(const std::shared_ptr<PollerEvent>& event, EventLoop *loop) {
     //std::cout << readBuf_.retrieveAllAsString() << std::endl;
     //return;
     
-    if (ParseHttpHeader()) {
+    if (ParseHttpRequest()) {
         // do sth
-        ReplyErrorRequest("Not Found!");
+        if (request_.GetState() == STATE_HTTPREQUEST_PROCESS) {
+            try {
+                auto iter = method_.find(request_.GetCmd());
+                if (iter == method_.end()) {
+                    ReplyErrorRequest("Bad Request! \r\n command not found!");
+                } else {
+                    iter->second(request_, response_);
+                }
+            } catch (...) {
+                LOGGER_ERROR("Http callback throw an exception!");
+            }
+        }
+        request_.SetState(STATE_HTTPREQUEST_BEGIN);
     } 
+
+    response_.ToBuffer(writeBuf_);
 
     if (writeBuf_.writableBytes()) {
         event_->EnableWrite();
@@ -27,9 +44,6 @@ void moxie::HttpClientHandler::AfetrWrite(const std::shared_ptr<PollerEvent>& ev
     if (writeBuf_.readableBytes() > 0) {
         return;
     }
-
-    this->state_ = STATE_HTTPREQUEST_BEGIN;
-    request_.Init();
     
     if (!request_.KeepAlive()) {
         loop->Delete(event);
@@ -39,12 +53,12 @@ void moxie::HttpClientHandler::AfetrWrite(const std::shared_ptr<PollerEvent>& ev
     }
 }
 
-bool moxie::HttpClientHandler::ParseHttpHeader() {
+bool moxie::HttpClientHandler::ParseHttpRequest() {
     if (readBuf_.readableBytes() <= 0) {
         return false;
     }
 
-    if (this->state_ == STATE_HTTPREQUEST_BEGIN) {
+    if (request_.GetState() == STATE_HTTPREQUEST_BEGIN) {
         request_.Init();
         response_.Init();
         const char *end = readBuf_.findChars(moxie::Buffer::kCRLF, 2);
@@ -55,7 +69,7 @@ bool moxie::HttpClientHandler::ParseHttpHeader() {
         std::vector<std::string> fl = moxie::utils::StringSplit(readBuf_.retrieveAsString(linelen), " \r\n");
         if (fl.size() != 3) {
             ReplyErrorRequest("Bad Request!");
-            this->state_ = STATE_HTTPREQUEST_BEGIN;
+            request_.SetState(STATE_HTTPREQUEST_BEGIN);
             return false;
         }
         std::cout << fl[0] << " " << fl[1] << " " << fl[2] << std::endl;
@@ -64,10 +78,10 @@ bool moxie::HttpClientHandler::ParseHttpHeader() {
         request_.SetVersion(fl[2]);
         // \r\n
         readBuf_.retrieve(2);
-        this->state_ = STATE_HTTPREQUEST_FIRSTLINE;
+        request_.SetState(STATE_HTTPREQUEST_FIRSTLINE);
     }
 
-    if (this->state_ == STATE_HTTPREQUEST_FIRSTLINE) {
+    if (request_.GetState() == STATE_HTTPREQUEST_FIRSTLINE) {
         const char *end = readBuf_.findChars("\r\n\r\n", 4);
         if (nullptr == end) {
             return false;
@@ -77,7 +91,7 @@ bool moxie::HttpClientHandler::ParseHttpHeader() {
         for (size_t i = 0; i < fl.size(); ++i) {
             size_t pos = fl[i].find_first_of(":");
             if (pos == std::string::npos) {
-                this->state_ = STATE_HTTPREQUEST_BEGIN;
+                request_.SetState(STATE_HTTPREQUEST_BEGIN);
                 ReplyErrorRequest("Bad Request!");
                 return false;
             }
@@ -86,11 +100,22 @@ bool moxie::HttpClientHandler::ParseHttpHeader() {
         }
         // \r\n\r\n
         readBuf_.retrieve(4);
-        this->state_ = STATE_HTTPREQUEST_BODY;
+        request_.SetState(STATE_HTTPREQUEST_BODY);
         if (request_.GetHeaderItem("Connection") != "close") {
             request_.SetKeepAlive(true);
         }
-        return true;
+    }
+
+    if (request_.GetState() == STATE_HTTPREQUEST_BODY) {
+        if (request_.GetHeaderItem("Content-length") == "") {
+            request_.SetState(STATE_HTTPREQUEST_PROCESS);
+            return true;
+        }
+        if (readBuf_.readableBytes() == static_cast<uint32_t>(std::atol(request_.GetHeaderItem("Content-length").c_str()))) {
+            request_.AppendBody(readBuf_.peek(), readBuf_.readableBytes());
+            request_.SetState(STATE_HTTPREQUEST_PROCESS);
+            return true;
+        }
     }
 
     return false;

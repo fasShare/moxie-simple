@@ -2,6 +2,7 @@
 #define MOXIE_MCACHEDREQUESTHANDLER_H
 #include <iostream>
 #include <map>
+#include <functional>
 #include <string>
 #include <memory>
 
@@ -14,26 +15,21 @@
 
 namespace moxie {
 
-const static uint16_t STATE_HTTPREQUEST_BEGIN = (1 << 0);
-const static uint16_t STATE_HTTPREQUEST_FIRSTLINE = (1 << 1);
-const static uint16_t STATE_HTTPREQUEST_HEADER = (1 << 2);
-const static uint16_t STATE_HTTPREQUEST_BODY = (1 << 3);
-const static uint16_t STATE_HTTPREQUEST_PROCESS = (1 << 4);
-
 class HttpClientHandler : public ClientHandler {
 public:
     HttpClientHandler(const std::shared_ptr<PollerEvent>& client,  const std::shared_ptr<moxie::NetAddress>& cad);
-    bool ParseHttpHeader();
+    void SetMethods(const std::map<std::string, std::function<void (moxie::HttpRequest&, moxie::HttpResponse&)>>& method);
     virtual void AfetrRead(const std::shared_ptr<PollerEvent>& event, EventLoop *loop) override;
     virtual void AfetrWrite(const std::shared_ptr<PollerEvent>& event, EventLoop *loop) override;
 private:
     void ReplyErrorRequest(const string& error);
+    bool ParseHttpRequest();
 private:
     std::shared_ptr<PollerEvent> event_;
     std::shared_ptr<moxie::NetAddress> peer_;
+    std::map<std::string, std::function<void (moxie::HttpRequest&, moxie::HttpResponse&)>> method_;
     HttpRequest request_;
     HttpResponse response_;
-    uint16_t state_;
 };
 
 }
