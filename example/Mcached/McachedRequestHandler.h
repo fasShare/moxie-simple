@@ -15,7 +15,6 @@ namespace moxie {
 class McachedClientHandler : public ClientHandler {
 public:
     McachedClientHandler(const std::shared_ptr<PollerEvent>& client,  const std::shared_ptr<moxie::NetAddress>& cad);
-    
     virtual void AfetrRead(const std::shared_ptr<PollerEvent>& event, EventLoop *loop) override;
     virtual void AfetrWrite(const std::shared_ptr<PollerEvent>& event, EventLoop *loop) override;
 private:

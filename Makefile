@@ -1,6 +1,8 @@
 
 moxie:
+	mkdir -p lib
 	make -C base
+	make -C utils
 	make -C example
 	
 .PHONY : clean
