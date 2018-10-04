@@ -15,7 +15,9 @@ moxie::EventLoop::EventLoop() :
     assert(te_);
 
     std::shared_ptr<PollerEvent> event = std::make_shared<PollerEvent>(te_->TimerFd(), moxie::kReadEvent);
-    assert(this->Register(event, te_));
+    if (!this->Register(event, te_)) {
+        LOGGER_FATAL("Register Timer event failed!");
+    }
 }
 
 bool moxie::EventLoop::Register(const std::shared_ptr<PollerEvent>& event, const std::shared_ptr<Handler>& handler) {
@@ -40,7 +42,7 @@ bool moxie::EventLoop::Register(const std::shared_ptr<PollerEvent>& event, const
     contexts_[event_fd] = context;
 
     if (!epoll_->EventAdd(event_fd, &et)) {
-        assert(1 == contexts_.erase(event_fd));
+        contexts_.erase(event_fd);
         delete context;
         return false;
     }

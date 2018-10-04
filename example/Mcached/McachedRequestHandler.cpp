@@ -34,12 +34,11 @@ bool moxie::McachedClientHandler::DoMcachedCammand() {
     assert(argc_ > 0);
     assert(floyd_raft);
 
-    //DebugArgcArgv();
-
     slash::Status s;
     std::string res;
 
     s = floyd_raft->ExecMcached(argv_, res);
+
     if (s.ok()) {
         if (argv_[0] == "SET" || argv_[0] == "set") {
             res = "+OK\r\n";
@@ -87,7 +86,6 @@ bool moxie::McachedClientHandler::ParseRedisRequest() {
         }
         // \r\n
         readBuf_.retrieve(2);
-        //std::cout << "argc:" << argc_ << std::endl;
     }
     
     while (argv_.size() < argc_) {
@@ -101,26 +99,21 @@ bool moxie::McachedClientHandler::ParseRedisRequest() {
             if (argv_len[0] != '$') {
                 curArgvlen_ = -1;
                 argc_ = 0;
-                //std::cout << argv_len << " " << argv_len[0] << std::endl;
                 ReplyString("-ERR Protocol error: invalid bulk length (argv_len)\r\n");
                 return false;
             }
             // remove $
             curArgvlen_ = std::atoi(argv_len.c_str() + sizeof('$'));
-            //std::cout << "curArgvlen_:" << curArgvlen_ << std::endl;
-            // \r\n
             readBuf_.retrieve(2);
         } else {
             std::string argv_str = readBuf_.retrieveAsString(crlf - readBuf_.peek());
             if (static_cast<ssize_t>(argv_str.size()) != curArgvlen_) {
                 curArgvlen_ = -1;
                 argc_ = 0;
-                std::cout << argv_str << std::endl;
                 ReplyString("-ERR Protocol error: invalid bulk length (argv_str)\r\n");
                 return false;
             }
             argv_.push_back(argv_str);
-            //std::cout << "argv_str:" << argv_str << std::endl;
             // \r\n
             readBuf_.retrieve(2);
             curArgvlen_ = -1; // must do, to read next argv item

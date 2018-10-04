@@ -37,7 +37,7 @@ int FloydWorkerConn::DealMessage() {
     return -1;
   }
   response_.Clear();
-  response_.set_type(Type::kRead);
+  response_.set_type(Type::kMcachedRead);
   set_is_reply(true);
 
   // why we still need to deal with message that is not these type
@@ -53,7 +53,7 @@ int FloydWorkerConn::DealMessage() {
       floyd_->DoCommand(request_, &response_);
       break;
     case Type::kServerStatus:
-      response_.set_type(Type::kRead);
+      response_.set_type(Type::kMcachedRead);
       break;
       response_.set_type(Type::kServerStatus);
       response_.set_code(StatusCode::kError);
@@ -82,7 +82,7 @@ int FloydWorkerConn::DealMessage() {
       response_.set_code(StatusCode::kOk);
       break;
     default:
-      response_.set_type(Type::kRead);
+      response_.set_type(Type::kMcachedRead);
       LOGV(WARN_LEVEL, floyd_->info_log_, "unknown cmd type");
       break;
   }

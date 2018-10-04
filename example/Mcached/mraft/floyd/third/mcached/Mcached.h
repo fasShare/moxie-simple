@@ -22,14 +22,14 @@ public:
 public:
     template <class T>
     static bool CheckSetArgs(const T& args) {
-        if (args.size() != 3) {
+        if (args.size() < 3) {
             return false;
         }
         return true;
     }
     template <class T>
     static bool CheckGetArgs(const T& args) {
-        if (args.size() != 2) {
+        if (args.size() < 2) {
             return false;
         }
         return true;

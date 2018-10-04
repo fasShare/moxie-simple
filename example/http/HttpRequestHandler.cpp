@@ -12,9 +12,6 @@ void moxie::HttpClientHandler::SetMethods(const std::map<std::string, std::funct
 }
 
 void moxie::HttpClientHandler::AfetrRead(const std::shared_ptr<PollerEvent>& event, EventLoop *loop) {
-    //std::cout << readBuf_.retrieveAllAsString() << std::endl;
-    //return;
-    
     if (ParseHttpRequest()) {
         // do sth
         if (request_.GetState() == STATE_HTTPREQUEST_PROCESS) {
@@ -72,7 +69,6 @@ bool moxie::HttpClientHandler::ParseHttpRequest() {
             request_.SetState(STATE_HTTPREQUEST_BEGIN);
             return false;
         }
-        std::cout << fl[0] << " " << fl[1] << " " << fl[2] << std::endl;
         request_.SetCmd(fl[0]);
         request_.SetPath(fl[1]);
         request_.SetVersion(fl[2]);
@@ -95,7 +91,6 @@ bool moxie::HttpClientHandler::ParseHttpRequest() {
                 ReplyErrorRequest("Bad Request!");
                 return false;
             }
-            std::cout << moxie::utils::StringTrim(fl[i].substr(0, pos)) << " " << moxie::utils::StringTrim(fl[i].substr(pos + 1)) << std::endl;
             request_.AddHeaderItem(moxie::utils::StringTrim(fl[i].substr(0, pos)), moxie::utils::StringTrim(fl[i].substr(pos + 1)));
         }
         // \r\n\r\n

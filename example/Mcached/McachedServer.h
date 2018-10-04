@@ -8,6 +8,7 @@
 #include <ListenHadler.h>
 #include <NetAddress.h>
 #include <McachedRequestHandler.h>
+#include <IdGenerator.h>
 
 namespace moxie {
 

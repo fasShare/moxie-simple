@@ -83,10 +83,14 @@ static void BuildLogEntry(const CmdRequest& cmd, uint64_t current_term, Entry* e
   // for mcached
   if (cmd.type() == Type::kMcachedRead) {
     entry->set_optype(Entry_OpType_kMcachedRead);
-    entry->mutable_args()->CopyFrom(cmd.mcached_request().args());
+    for (int i = 0; i < cmd.mcached_request().args_size(); ++i) {
+      *(entry->add_args()) = cmd.mcached_request().args(i);
+    }
   } else if (cmd.type() == Type::kMcachedWrite) {
     entry->set_optype(Entry_OpType_kMcachedWrite);
-    entry->mutable_args()->CopyFrom(cmd.mcached_request().args());
+    for (int i = 0; i < cmd.mcached_request().args_size(); ++i) {
+      *(entry->add_args()) = cmd.mcached_request().args(i);
+    }
   } else if (cmd.type() == Type::kAddServer) {
     entry->set_optype(Entry_OpType_kAddServer);
     entry->set_server(cmd.add_server_request().new_server());
@@ -493,14 +497,14 @@ Status FloydImpl::ExecMcached(const std::vector<std::string>& args, std::string&
     return Status::Corruption("ExecMcached args is Zero Error");
   }
   // The read operations of Mcached, needn't send to cluster
-  /*
-  if (cached_->IsReadOnly(args[0]) || options_.single_mode) {
+  
+  if (options_.single_mode) {
     if (cached_->ExecuteCommand(args, res) != 0) {
       return Status::Corruption("ExecMcached Error");
     }
     return Status::OK();
   }
-  */
+  
   CmdRequest cmd;
   BuildExecMcachedRequest(args, &cmd);
   CmdResponse response;
@@ -553,7 +557,6 @@ Status FloydImpl::ExecuteCommand(const CmdRequest& request,
   // Complete CmdRequest if needed
   std::string value;
   rocksdb::Status rs;
-  Lock lock;
   switch (request.type()) {
     case Type::kMcachedRead:
       if (cached_->ExecuteCommand(request.mcached_request().args(), value) == 0) {

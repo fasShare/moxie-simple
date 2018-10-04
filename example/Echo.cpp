@@ -16,9 +16,10 @@ public:
     virtual void AfetrRead(const std::shared_ptr<PollerEvent>& event, EventLoop *loop) {
         if (readBuf_.readableBytes() > 0) {
             writeBuf_.append(readBuf_.peek(), readBuf_.readableBytes());
-            readBuf_.retrieveAll();
-            event->EnableWrite();
-            loop->Modity(event);
+            //readBuf_.retrieveAll();
+            std::cout << "[" << readBuf_.retrieveAllAsString() << "]" << std::endl;
+            //event->EnableWrite();
+            //loop->Modity(event);
         }
     }
 

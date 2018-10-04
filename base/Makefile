@@ -1,5 +1,5 @@
 libs := -lpthread
-cflags := -std=c++11 -static -Wall
+cflags := -O2 -std=c++11 -static -Wall
 CC = g++
 
 moxie_base := ./base

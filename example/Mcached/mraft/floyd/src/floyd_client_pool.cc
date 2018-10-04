@@ -16,21 +16,6 @@ namespace floyd {
 static std::string CmdType(const CmdRequest& cmd) {
   std::string ret;
   switch (cmd.type()) {
-    case Type::kRead:
-      ret = "Read";
-      break;
-    case Type::kWrite:
-      ret = "Write";
-      break;
-    case Type::kDelete:
-      ret = "Delete";
-      break;
-    case Type::kTryLock:
-      ret = "TryLock";
-      break;
-    case Type::kUnLock:
-      ret = "UnLock";
-      break;
     case Type::kRequestVote:
       ret = "RequestVote";
       break;

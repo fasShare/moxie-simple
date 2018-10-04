@@ -74,7 +74,7 @@ int moxie::TimerEngine::TimerFd() const {
 void moxie::TimerEngine::RestartTimer(std::list<std::pair<moxie::Timestamp, moxie::Timer*>>& expired) {
     for (auto iter = expired.begin(); iter != expired.end(); ++iter) {
         if (iter->second->State() & WILLREMOVED) {
-            assert(timerExist_.erase(iter->second) == 1);
+            timerExist_.erase(iter->second);
             delete iter->second;
             iter->second = nullptr;
             continue;
@@ -89,7 +89,7 @@ void moxie::TimerEngine::RestartTimer(std::list<std::pair<moxie::Timestamp, moxi
         } else if (iter->second->State() & SHOULDADDED) {
             RegisterTimer(iter->second);
         } else {
-            assert(timerExist_.erase(iter->second) == 1);
+            timerExist_.erase(iter->second);
             delete iter->second;
             iter->second = nullptr;
         }
@@ -131,8 +131,6 @@ bool moxie::TimerEngine::RegisterTimer(moxie::Timer *timer) {
 
     Timestamp earlist = EarlistExpiration();
     return ResetTd(earlist);
-
-    return true;
 }
 
 bool  moxie::TimerEngine::UnregisterTimer(moxie::Timer *timer) {
@@ -147,9 +145,9 @@ bool  moxie::TimerEngine::UnregisterTimer(moxie::Timer *timer) {
     }
 
     assert(timer->State() & INQUEUED);
-    assert(1 == timers_.erase(std::pair<Timestamp, Timer *>(timerExist_[timer], timer)));
+    timers_.erase(std::pair<Timestamp, Timer *>(timerExist_[timer], timer));
 
-    assert(timerExist_.erase(timer) == 1);
+    timerExist_.erase(timer);
 
     delete timer;
     timer = nullptr;

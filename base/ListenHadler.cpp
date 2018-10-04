@@ -17,7 +17,9 @@ void moxie::ListenHadler::Process(const std::shared_ptr<PollerEvent>& event, Eve
 
     if (event->ValatileWriteEvent()) {
         event->DisableWrite();
-        assert(loop->Modity(event));
+        if (!loop->Modity(event)) {
+            LOGGER_ERROR("Modify write event error!");
+        }
     }
 
     if (event->ValatileReadEvent()) {

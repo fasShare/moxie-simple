@@ -39,7 +39,7 @@ namespace protobuf_floyd_2eproto {
 struct TableStruct {
   static const ::google::protobuf::internal::ParseTableField entries[];
   static const ::google::protobuf::internal::AuxillaryParseTableField aux[];
-  static const ::google::protobuf::internal::ParseTable schema[18];
+  static const ::google::protobuf::internal::ParseTable schema[14];
   static const ::google::protobuf::internal::FieldMetadata field_metadata[];
   static const ::google::protobuf::internal::SerializationTable serialization_table[];
   static const ::google::protobuf::uint32 offsets[];
@@ -56,12 +56,6 @@ extern CmdRequest_AddServerRequestDefaultTypeInternal _CmdRequest_AddServerReque
 class CmdRequest_AppendEntries;
 class CmdRequest_AppendEntriesDefaultTypeInternal;
 extern CmdRequest_AppendEntriesDefaultTypeInternal _CmdRequest_AppendEntries_default_instance_;
-class CmdRequest_KvRequest;
-class CmdRequest_KvRequestDefaultTypeInternal;
-extern CmdRequest_KvRequestDefaultTypeInternal _CmdRequest_KvRequest_default_instance_;
-class CmdRequest_LockRequest;
-class CmdRequest_LockRequestDefaultTypeInternal;
-extern CmdRequest_LockRequestDefaultTypeInternal _CmdRequest_LockRequest_default_instance_;
 class CmdRequest_McachedRequest;
 class CmdRequest_McachedRequestDefaultTypeInternal;
 extern CmdRequest_McachedRequestDefaultTypeInternal _CmdRequest_McachedRequest_default_instance_;
@@ -80,9 +74,6 @@ extern CmdResponseDefaultTypeInternal _CmdResponse_default_instance_;
 class CmdResponse_AppendEntriesResponse;
 class CmdResponse_AppendEntriesResponseDefaultTypeInternal;
 extern CmdResponse_AppendEntriesResponseDefaultTypeInternal _CmdResponse_AppendEntriesResponse_default_instance_;
-class CmdResponse_KvResponse;
-class CmdResponse_KvResponseDefaultTypeInternal;
-extern CmdResponse_KvResponseDefaultTypeInternal _CmdResponse_KvResponse_default_instance_;
 class CmdResponse_McachedResponse;
 class CmdResponse_McachedResponseDefaultTypeInternal;
 extern CmdResponse_McachedResponseDefaultTypeInternal _CmdResponse_McachedResponse_default_instance_;
@@ -95,9 +86,6 @@ extern CmdResponse_ServerStatusDefaultTypeInternal _CmdResponse_ServerStatus_def
 class Entry;
 class EntryDefaultTypeInternal;
 extern EntryDefaultTypeInternal _Entry_default_instance_;
-class Lock;
-class LockDefaultTypeInternal;
-extern LockDefaultTypeInternal _Lock_default_instance_;
 class Membership;
 class MembershipDefaultTypeInternal;
 extern MembershipDefaultTypeInternal _Membership_default_instance_;
@@ -107,39 +95,30 @@ namespace protobuf {
 template<> ::floyd::CmdRequest* Arena::CreateMaybeMessage<::floyd::CmdRequest>(Arena*);
 template<> ::floyd::CmdRequest_AddServerRequest* Arena::CreateMaybeMessage<::floyd::CmdRequest_AddServerRequest>(Arena*);
 template<> ::floyd::CmdRequest_AppendEntries* Arena::CreateMaybeMessage<::floyd::CmdRequest_AppendEntries>(Arena*);
-template<> ::floyd::CmdRequest_KvRequest* Arena::CreateMaybeMessage<::floyd::CmdRequest_KvRequest>(Arena*);
-template<> ::floyd::CmdRequest_LockRequest* Arena::CreateMaybeMessage<::floyd::CmdRequest_LockRequest>(Arena*);
 template<> ::floyd::CmdRequest_McachedRequest* Arena::CreateMaybeMessage<::floyd::CmdRequest_McachedRequest>(Arena*);
 template<> ::floyd::CmdRequest_RemoveServerRequest* Arena::CreateMaybeMessage<::floyd::CmdRequest_RemoveServerRequest>(Arena*);
 template<> ::floyd::CmdRequest_RequestVote* Arena::CreateMaybeMessage<::floyd::CmdRequest_RequestVote>(Arena*);
 template<> ::floyd::CmdRequest_ServerStatus* Arena::CreateMaybeMessage<::floyd::CmdRequest_ServerStatus>(Arena*);
 template<> ::floyd::CmdResponse* Arena::CreateMaybeMessage<::floyd::CmdResponse>(Arena*);
 template<> ::floyd::CmdResponse_AppendEntriesResponse* Arena::CreateMaybeMessage<::floyd::CmdResponse_AppendEntriesResponse>(Arena*);
-template<> ::floyd::CmdResponse_KvResponse* Arena::CreateMaybeMessage<::floyd::CmdResponse_KvResponse>(Arena*);
 template<> ::floyd::CmdResponse_McachedResponse* Arena::CreateMaybeMessage<::floyd::CmdResponse_McachedResponse>(Arena*);
 template<> ::floyd::CmdResponse_RequestVoteResponse* Arena::CreateMaybeMessage<::floyd::CmdResponse_RequestVoteResponse>(Arena*);
 template<> ::floyd::CmdResponse_ServerStatus* Arena::CreateMaybeMessage<::floyd::CmdResponse_ServerStatus>(Arena*);
 template<> ::floyd::Entry* Arena::CreateMaybeMessage<::floyd::Entry>(Arena*);
-template<> ::floyd::Lock* Arena::CreateMaybeMessage<::floyd::Lock>(Arena*);
 template<> ::floyd::Membership* Arena::CreateMaybeMessage<::floyd::Membership>(Arena*);
 }  // namespace protobuf
 }  // namespace google
 namespace floyd {
 
 enum Entry_OpType {
-  Entry_OpType_kRead = 0,
-  Entry_OpType_kWrite = 1,
-  Entry_OpType_kDelete = 2,
-  Entry_OpType_kTryLock = 4,
-  Entry_OpType_kUnLock = 5,
-  Entry_OpType_kAddServer = 6,
-  Entry_OpType_kRemoveServer = 7,
-  Entry_OpType_kGetAllServers = 8,
-  Entry_OpType_kMcachedWrite = 9,
-  Entry_OpType_kMcachedRead = 10
+  Entry_OpType_kAddServer = 0,
+  Entry_OpType_kRemoveServer = 1,
+  Entry_OpType_kGetAllServers = 2,
+  Entry_OpType_kMcachedWrite = 3,
+  Entry_OpType_kMcachedRead = 4
 };
 bool Entry_OpType_IsValid(int value);
-const Entry_OpType Entry_OpType_OpType_MIN = Entry_OpType_kRead;
+const Entry_OpType Entry_OpType_OpType_MIN = Entry_OpType_kAddServer;
 const Entry_OpType Entry_OpType_OpType_MAX = Entry_OpType_kMcachedRead;
 const int Entry_OpType_OpType_ARRAYSIZE = Entry_OpType_OpType_MAX + 1;
 
@@ -154,23 +133,18 @@ inline bool Entry_OpType_Parse(
     Entry_OpType_descriptor(), name, value);
 }
 enum Type {
-  kRead = 0,
-  kWrite = 1,
-  kDelete = 3,
-  kTryLock = 5,
-  kUnLock = 6,
-  kAddServer = 11,
-  kRemoveServer = 12,
-  kGetAllServers = 13,
-  kMcachedWrite = 14,
-  kMcachedRead = 15,
-  kRequestVote = 8,
-  kAppendEntries = 9,
-  kServerStatus = 10
+  kAddServer = 0,
+  kRemoveServer = 1,
+  kGetAllServers = 2,
+  kMcachedWrite = 3,
+  kMcachedRead = 4,
+  kRequestVote = 5,
+  kAppendEntries = 6,
+  kServerStatus = 7
 };
 bool Type_IsValid(int value);
-const Type Type_MIN = kRead;
-const Type Type_MAX = kMcachedRead;
+const Type Type_MIN = kAddServer;
+const Type Type_MAX = kServerStatus;
 const int Type_ARRAYSIZE = Type_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* Type_descriptor();
@@ -299,16 +273,6 @@ class Entry : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
   // nested types ----------------------------------------------------
 
   typedef Entry_OpType OpType;
-  static const OpType kRead =
-    Entry_OpType_kRead;
-  static const OpType kWrite =
-    Entry_OpType_kWrite;
-  static const OpType kDelete =
-    Entry_OpType_kDelete;
-  static const OpType kTryLock =
-    Entry_OpType_kTryLock;
-  static const OpType kUnLock =
-    Entry_OpType_kUnLock;
   static const OpType kAddServer =
     Entry_OpType_kAddServer;
   static const OpType kRemoveServer =
@@ -342,10 +306,10 @@ class Entry : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
 
   // accessors -------------------------------------------------------
 
-  // repeated bytes args = 8;
+  // repeated bytes args = 4;
   int args_size() const;
   void clear_args();
-  static const int kArgsFieldNumber = 8;
+  static const int kArgsFieldNumber = 4;
   const ::std::string& args(int index) const;
   ::std::string* mutable_args(int index);
   void set_args(int index, const ::std::string& value);
@@ -364,55 +328,10 @@ class Entry : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
   const ::google::protobuf::RepeatedPtrField< ::std::string>& args() const;
   ::google::protobuf::RepeatedPtrField< ::std::string>* mutable_args();
 
-  // optional string key = 2;
-  bool has_key() const;
-  void clear_key();
-  static const int kKeyFieldNumber = 2;
-  const ::std::string& key() const;
-  void set_key(const ::std::string& value);
-  #if LANG_CXX11
-  void set_key(::std::string&& value);
-  #endif
-  void set_key(const char* value);
-  void set_key(const char* value, size_t size);
-  ::std::string* mutable_key();
-  ::std::string* release_key();
-  void set_allocated_key(::std::string* key);
-
-  // optional bytes value = 3;
-  bool has_value() const;
-  void clear_value();
-  static const int kValueFieldNumber = 3;
-  const ::std::string& value() const;
-  void set_value(const ::std::string& value);
-  #if LANG_CXX11
-  void set_value(::std::string&& value);
-  #endif
-  void set_value(const char* value);
-  void set_value(const void* value, size_t size);
-  ::std::string* mutable_value();
-  ::std::string* release_value();
-  void set_allocated_value(::std::string* value);
-
-  // optional bytes holder = 5;
-  bool has_holder() const;
-  void clear_holder();
-  static const int kHolderFieldNumber = 5;
-  const ::std::string& holder() const;
-  void set_holder(const ::std::string& value);
-  #if LANG_CXX11
-  void set_holder(::std::string&& value);
-  #endif
-  void set_holder(const char* value);
-  void set_holder(const void* value, size_t size);
-  ::std::string* mutable_holder();
-  ::std::string* release_holder();
-  void set_allocated_holder(::std::string* holder);
-
-  // optional bytes server = 7;
+  // optional bytes server = 3;
   bool has_server() const;
   void clear_server();
-  static const int kServerFieldNumber = 7;
+  static const int kServerFieldNumber = 3;
   const ::std::string& server() const;
   void set_server(const ::std::string& value);
   #if LANG_CXX11
@@ -431,17 +350,10 @@ class Entry : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
   ::google::protobuf::uint64 term() const;
   void set_term(::google::protobuf::uint64 value);
 
-  // optional uint64 lease_end = 6;
-  bool has_lease_end() const;
-  void clear_lease_end();
-  static const int kLeaseEndFieldNumber = 6;
-  ::google::protobuf::uint64 lease_end() const;
-  void set_lease_end(::google::protobuf::uint64 value);
-
-  // required .floyd.Entry.OpType optype = 4;
+  // required .floyd.Entry.OpType optype = 2;
   bool has_optype() const;
   void clear_optype();
-  static const int kOptypeFieldNumber = 4;
+  static const int kOptypeFieldNumber = 2;
   ::floyd::Entry_OpType optype() const;
   void set_optype(::floyd::Entry_OpType value);
 
@@ -449,16 +361,8 @@ class Entry : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
  private:
   void set_has_term();
   void clear_has_term();
-  void set_has_key();
-  void clear_has_key();
-  void set_has_value();
-  void clear_has_value();
   void set_has_optype();
   void clear_has_optype();
-  void set_has_holder();
-  void clear_has_holder();
-  void set_has_lease_end();
-  void clear_has_lease_end();
   void set_has_server();
   void clear_has_server();
 
@@ -466,12 +370,8 @@ class Entry : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
   ::google::protobuf::internal::HasBits<1> _has_bits_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   ::google::protobuf::RepeatedPtrField< ::std::string> args_;
-  ::google::protobuf::internal::ArenaStringPtr key_;
-  ::google::protobuf::internal::ArenaStringPtr value_;
-  ::google::protobuf::internal::ArenaStringPtr holder_;
   ::google::protobuf::internal::ArenaStringPtr server_;
   ::google::protobuf::uint64 term_;
-  ::google::protobuf::uint64 lease_end_;
   int optype_;
   friend struct ::protobuf_floyd_2eproto::TableStruct;
 };
@@ -830,299 +730,6 @@ class CmdRequest_AppendEntries : public ::google::protobuf::Message /* @@protoc_
 };
 // -------------------------------------------------------------------
 
-class CmdRequest_KvRequest : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:floyd.CmdRequest.KvRequest) */ {
- public:
-  CmdRequest_KvRequest();
-  virtual ~CmdRequest_KvRequest();
-
-  CmdRequest_KvRequest(const CmdRequest_KvRequest& from);
-
-  inline CmdRequest_KvRequest& operator=(const CmdRequest_KvRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  #if LANG_CXX11
-  CmdRequest_KvRequest(CmdRequest_KvRequest&& from) noexcept
-    : CmdRequest_KvRequest() {
-    *this = ::std::move(from);
-  }
-
-  inline CmdRequest_KvRequest& operator=(CmdRequest_KvRequest&& from) noexcept {
-    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-  #endif
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _internal_metadata_.unknown_fields();
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return _internal_metadata_.mutable_unknown_fields();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const CmdRequest_KvRequest& default_instance();
-
-  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
-  static inline const CmdRequest_KvRequest* internal_default_instance() {
-    return reinterpret_cast<const CmdRequest_KvRequest*>(
-               &_CmdRequest_KvRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages =
-    3;
-
-  void Swap(CmdRequest_KvRequest* other);
-  friend void swap(CmdRequest_KvRequest& a, CmdRequest_KvRequest& b) {
-    a.Swap(&b);
-  }
-
-  // implements Message ----------------------------------------------
-
-  inline CmdRequest_KvRequest* New() const final {
-    return CreateMaybeMessage<CmdRequest_KvRequest>(NULL);
-  }
-
-  CmdRequest_KvRequest* New(::google::protobuf::Arena* arena) const final {
-    return CreateMaybeMessage<CmdRequest_KvRequest>(arena);
-  }
-  void CopyFrom(const ::google::protobuf::Message& from) final;
-  void MergeFrom(const ::google::protobuf::Message& from) final;
-  void CopyFrom(const CmdRequest_KvRequest& from);
-  void MergeFrom(const CmdRequest_KvRequest& from);
-  void Clear() final;
-  bool IsInitialized() const final;
-
-  size_t ByteSizeLong() const final;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) final;
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const final;
-  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* target) const final;
-  int GetCachedSize() const final { return _cached_size_.Get(); }
-
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const final;
-  void InternalSwap(CmdRequest_KvRequest* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return NULL;
-  }
-  inline void* MaybeArenaPtr() const {
-    return NULL;
-  }
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const final;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required bytes key = 1;
-  bool has_key() const;
-  void clear_key();
-  static const int kKeyFieldNumber = 1;
-  const ::std::string& key() const;
-  void set_key(const ::std::string& value);
-  #if LANG_CXX11
-  void set_key(::std::string&& value);
-  #endif
-  void set_key(const char* value);
-  void set_key(const void* value, size_t size);
-  ::std::string* mutable_key();
-  ::std::string* release_key();
-  void set_allocated_key(::std::string* key);
-
-  // optional bytes value = 2;
-  bool has_value() const;
-  void clear_value();
-  static const int kValueFieldNumber = 2;
-  const ::std::string& value() const;
-  void set_value(const ::std::string& value);
-  #if LANG_CXX11
-  void set_value(::std::string&& value);
-  #endif
-  void set_value(const char* value);
-  void set_value(const void* value, size_t size);
-  ::std::string* mutable_value();
-  ::std::string* release_value();
-  void set_allocated_value(::std::string* value);
-
-  // @@protoc_insertion_point(class_scope:floyd.CmdRequest.KvRequest)
- private:
-  void set_has_key();
-  void clear_has_key();
-  void set_has_value();
-  void clear_has_value();
-
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::internal::HasBits<1> _has_bits_;
-  mutable ::google::protobuf::internal::CachedSize _cached_size_;
-  ::google::protobuf::internal::ArenaStringPtr key_;
-  ::google::protobuf::internal::ArenaStringPtr value_;
-  friend struct ::protobuf_floyd_2eproto::TableStruct;
-};
-// -------------------------------------------------------------------
-
-class CmdRequest_LockRequest : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:floyd.CmdRequest.LockRequest) */ {
- public:
-  CmdRequest_LockRequest();
-  virtual ~CmdRequest_LockRequest();
-
-  CmdRequest_LockRequest(const CmdRequest_LockRequest& from);
-
-  inline CmdRequest_LockRequest& operator=(const CmdRequest_LockRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  #if LANG_CXX11
-  CmdRequest_LockRequest(CmdRequest_LockRequest&& from) noexcept
-    : CmdRequest_LockRequest() {
-    *this = ::std::move(from);
-  }
-
-  inline CmdRequest_LockRequest& operator=(CmdRequest_LockRequest&& from) noexcept {
-    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-  #endif
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _internal_metadata_.unknown_fields();
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return _internal_metadata_.mutable_unknown_fields();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const CmdRequest_LockRequest& default_instance();
-
-  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
-  static inline const CmdRequest_LockRequest* internal_default_instance() {
-    return reinterpret_cast<const CmdRequest_LockRequest*>(
-               &_CmdRequest_LockRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages =
-    4;
-
-  void Swap(CmdRequest_LockRequest* other);
-  friend void swap(CmdRequest_LockRequest& a, CmdRequest_LockRequest& b) {
-    a.Swap(&b);
-  }
-
-  // implements Message ----------------------------------------------
-
-  inline CmdRequest_LockRequest* New() const final {
-    return CreateMaybeMessage<CmdRequest_LockRequest>(NULL);
-  }
-
-  CmdRequest_LockRequest* New(::google::protobuf::Arena* arena) const final {
-    return CreateMaybeMessage<CmdRequest_LockRequest>(arena);
-  }
-  void CopyFrom(const ::google::protobuf::Message& from) final;
-  void MergeFrom(const ::google::protobuf::Message& from) final;
-  void CopyFrom(const CmdRequest_LockRequest& from);
-  void MergeFrom(const CmdRequest_LockRequest& from);
-  void Clear() final;
-  bool IsInitialized() const final;
-
-  size_t ByteSizeLong() const final;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) final;
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const final;
-  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* target) const final;
-  int GetCachedSize() const final { return _cached_size_.Get(); }
-
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const final;
-  void InternalSwap(CmdRequest_LockRequest* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return NULL;
-  }
-  inline void* MaybeArenaPtr() const {
-    return NULL;
-  }
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const final;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required bytes name = 1;
-  bool has_name() const;
-  void clear_name();
-  static const int kNameFieldNumber = 1;
-  const ::std::string& name() const;
-  void set_name(const ::std::string& value);
-  #if LANG_CXX11
-  void set_name(::std::string&& value);
-  #endif
-  void set_name(const char* value);
-  void set_name(const void* value, size_t size);
-  ::std::string* mutable_name();
-  ::std::string* release_name();
-  void set_allocated_name(::std::string* name);
-
-  // required bytes holder = 2;
-  bool has_holder() const;
-  void clear_holder();
-  static const int kHolderFieldNumber = 2;
-  const ::std::string& holder() const;
-  void set_holder(const ::std::string& value);
-  #if LANG_CXX11
-  void set_holder(::std::string&& value);
-  #endif
-  void set_holder(const char* value);
-  void set_holder(const void* value, size_t size);
-  ::std::string* mutable_holder();
-  ::std::string* release_holder();
-  void set_allocated_holder(::std::string* holder);
-
-  // optional uint64 lease_end = 3;
-  bool has_lease_end() const;
-  void clear_lease_end();
-  static const int kLeaseEndFieldNumber = 3;
-  ::google::protobuf::uint64 lease_end() const;
-  void set_lease_end(::google::protobuf::uint64 value);
-
-  // @@protoc_insertion_point(class_scope:floyd.CmdRequest.LockRequest)
- private:
-  void set_has_name();
-  void clear_has_name();
-  void set_has_holder();
-  void clear_has_holder();
-  void set_has_lease_end();
-  void clear_has_lease_end();
-
-  // helper for ByteSizeLong()
-  size_t RequiredFieldsByteSizeFallback() const;
-
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::internal::HasBits<1> _has_bits_;
-  mutable ::google::protobuf::internal::CachedSize _cached_size_;
-  ::google::protobuf::internal::ArenaStringPtr name_;
-  ::google::protobuf::internal::ArenaStringPtr holder_;
-  ::google::protobuf::uint64 lease_end_;
-  friend struct ::protobuf_floyd_2eproto::TableStruct;
-};
-// -------------------------------------------------------------------
-
 class CmdRequest_AddServerRequest : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:floyd.CmdRequest.AddServerRequest) */ {
  public:
   CmdRequest_AddServerRequest();
@@ -1165,7 +772,7 @@ class CmdRequest_AddServerRequest : public ::google::protobuf::Message /* @@prot
                &_CmdRequest_AddServerRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    5;
+    3;
 
   void Swap(CmdRequest_AddServerRequest* other);
   friend void swap(CmdRequest_AddServerRequest& a, CmdRequest_AddServerRequest& b) {
@@ -1287,7 +894,7 @@ class CmdRequest_RemoveServerRequest : public ::google::protobuf::Message /* @@p
                &_CmdRequest_RemoveServerRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    6;
+    4;
 
   void Swap(CmdRequest_RemoveServerRequest* other);
   friend void swap(CmdRequest_RemoveServerRequest& a, CmdRequest_RemoveServerRequest& b) {
@@ -1409,7 +1016,7 @@ class CmdRequest_ServerStatus : public ::google::protobuf::Message /* @@protoc_i
                &_CmdRequest_ServerStatus_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    7;
+    5;
 
   void Swap(CmdRequest_ServerStatus* other);
   friend void swap(CmdRequest_ServerStatus& a, CmdRequest_ServerStatus& b) {
@@ -1564,7 +1171,7 @@ class CmdRequest_McachedRequest : public ::google::protobuf::Message /* @@protoc
                &_CmdRequest_McachedRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    8;
+    6;
 
   void Swap(CmdRequest_McachedRequest* other);
   friend void swap(CmdRequest_McachedRequest& a, CmdRequest_McachedRequest& b) {
@@ -1691,7 +1298,7 @@ class CmdRequest : public ::google::protobuf::Message /* @@protoc_insertion_poin
                &_CmdRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    9;
+    7;
 
   void Swap(CmdRequest* other);
   friend void swap(CmdRequest& a, CmdRequest& b) {
@@ -1743,8 +1350,6 @@ class CmdRequest : public ::google::protobuf::Message /* @@protoc_insertion_poin
 
   typedef CmdRequest_RequestVote RequestVote;
   typedef CmdRequest_AppendEntries AppendEntries;
-  typedef CmdRequest_KvRequest KvRequest;
-  typedef CmdRequest_LockRequest LockRequest;
   typedef CmdRequest_AddServerRequest AddServerRequest;
   typedef CmdRequest_RemoveServerRequest RemoveServerRequest;
   typedef CmdRequest_ServerStatus ServerStatus;
@@ -1776,34 +1381,10 @@ class CmdRequest : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::floyd::CmdRequest_AppendEntries* mutable_append_entries();
   void set_allocated_append_entries(::floyd::CmdRequest_AppendEntries* append_entries);
 
-  // optional .floyd.CmdRequest.KvRequest kv_request = 4;
-  bool has_kv_request() const;
-  void clear_kv_request();
-  static const int kKvRequestFieldNumber = 4;
-  private:
-  const ::floyd::CmdRequest_KvRequest& _internal_kv_request() const;
-  public:
-  const ::floyd::CmdRequest_KvRequest& kv_request() const;
-  ::floyd::CmdRequest_KvRequest* release_kv_request();
-  ::floyd::CmdRequest_KvRequest* mutable_kv_request();
-  void set_allocated_kv_request(::floyd::CmdRequest_KvRequest* kv_request);
-
-  // optional .floyd.CmdRequest.LockRequest lock_request = 5;
-  bool has_lock_request() const;
-  void clear_lock_request();
-  static const int kLockRequestFieldNumber = 5;
-  private:
-  const ::floyd::CmdRequest_LockRequest& _internal_lock_request() const;
-  public:
-  const ::floyd::CmdRequest_LockRequest& lock_request() const;
-  ::floyd::CmdRequest_LockRequest* release_lock_request();
-  ::floyd::CmdRequest_LockRequest* mutable_lock_request();
-  void set_allocated_lock_request(::floyd::CmdRequest_LockRequest* lock_request);
-
-  // optional .floyd.CmdRequest.ServerStatus server_status = 6;
+  // optional .floyd.CmdRequest.ServerStatus server_status = 4;
   bool has_server_status() const;
   void clear_server_status();
-  static const int kServerStatusFieldNumber = 6;
+  static const int kServerStatusFieldNumber = 4;
   private:
   const ::floyd::CmdRequest_ServerStatus& _internal_server_status() const;
   public:
@@ -1812,10 +1393,10 @@ class CmdRequest : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::floyd::CmdRequest_ServerStatus* mutable_server_status();
   void set_allocated_server_status(::floyd::CmdRequest_ServerStatus* server_status);
 
-  // optional .floyd.CmdRequest.AddServerRequest add_server_request = 7;
+  // optional .floyd.CmdRequest.AddServerRequest add_server_request = 5;
   bool has_add_server_request() const;
   void clear_add_server_request();
-  static const int kAddServerRequestFieldNumber = 7;
+  static const int kAddServerRequestFieldNumber = 5;
   private:
   const ::floyd::CmdRequest_AddServerRequest& _internal_add_server_request() const;
   public:
@@ -1824,10 +1405,10 @@ class CmdRequest : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::floyd::CmdRequest_AddServerRequest* mutable_add_server_request();
   void set_allocated_add_server_request(::floyd::CmdRequest_AddServerRequest* add_server_request);
 
-  // optional .floyd.CmdRequest.RemoveServerRequest remove_server_request = 8;
+  // optional .floyd.CmdRequest.RemoveServerRequest remove_server_request = 6;
   bool has_remove_server_request() const;
   void clear_remove_server_request();
-  static const int kRemoveServerRequestFieldNumber = 8;
+  static const int kRemoveServerRequestFieldNumber = 6;
   private:
   const ::floyd::CmdRequest_RemoveServerRequest& _internal_remove_server_request() const;
   public:
@@ -1836,10 +1417,10 @@ class CmdRequest : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::floyd::CmdRequest_RemoveServerRequest* mutable_remove_server_request();
   void set_allocated_remove_server_request(::floyd::CmdRequest_RemoveServerRequest* remove_server_request);
 
-  // optional .floyd.CmdRequest.McachedRequest mcached_request = 9;
+  // optional .floyd.CmdRequest.McachedRequest mcached_request = 7;
   bool has_mcached_request() const;
   void clear_mcached_request();
-  static const int kMcachedRequestFieldNumber = 9;
+  static const int kMcachedRequestFieldNumber = 7;
   private:
   const ::floyd::CmdRequest_McachedRequest& _internal_mcached_request() const;
   public:
@@ -1863,10 +1444,6 @@ class CmdRequest : public ::google::protobuf::Message /* @@protoc_insertion_poin
   void clear_has_request_vote();
   void set_has_append_entries();
   void clear_has_append_entries();
-  void set_has_kv_request();
-  void clear_has_kv_request();
-  void set_has_lock_request();
-  void clear_has_lock_request();
   void set_has_server_status();
   void clear_has_server_status();
   void set_has_add_server_request();
@@ -1881,8 +1458,6 @@ class CmdRequest : public ::google::protobuf::Message /* @@protoc_insertion_poin
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   ::floyd::CmdRequest_RequestVote* request_vote_;
   ::floyd::CmdRequest_AppendEntries* append_entries_;
-  ::floyd::CmdRequest_KvRequest* kv_request_;
-  ::floyd::CmdRequest_LockRequest* lock_request_;
   ::floyd::CmdRequest_ServerStatus* server_status_;
   ::floyd::CmdRequest_AddServerRequest* add_server_request_;
   ::floyd::CmdRequest_RemoveServerRequest* remove_server_request_;
@@ -1934,7 +1509,7 @@ class CmdResponse_RequestVoteResponse : public ::google::protobuf::Message /* @@
                &_CmdResponse_RequestVoteResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    10;
+    8;
 
   void Swap(CmdResponse_RequestVoteResponse* other);
   friend void swap(CmdResponse_RequestVoteResponse& a, CmdResponse_RequestVoteResponse& b) {
@@ -2061,7 +1636,7 @@ class CmdResponse_AppendEntriesResponse : public ::google::protobuf::Message /* 
                &_CmdResponse_AppendEntriesResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    11;
+    9;
 
   void Swap(CmdResponse_AppendEntriesResponse* other);
   friend void swap(CmdResponse_AppendEntriesResponse& a, CmdResponse_AppendEntriesResponse& b) {
@@ -2156,128 +1731,6 @@ class CmdResponse_AppendEntriesResponse : public ::google::protobuf::Message /* 
 };
 // -------------------------------------------------------------------
 
-class CmdResponse_KvResponse : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:floyd.CmdResponse.KvResponse) */ {
- public:
-  CmdResponse_KvResponse();
-  virtual ~CmdResponse_KvResponse();
-
-  CmdResponse_KvResponse(const CmdResponse_KvResponse& from);
-
-  inline CmdResponse_KvResponse& operator=(const CmdResponse_KvResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  #if LANG_CXX11
-  CmdResponse_KvResponse(CmdResponse_KvResponse&& from) noexcept
-    : CmdResponse_KvResponse() {
-    *this = ::std::move(from);
-  }
-
-  inline CmdResponse_KvResponse& operator=(CmdResponse_KvResponse&& from) noexcept {
-    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-  #endif
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _internal_metadata_.unknown_fields();
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return _internal_metadata_.mutable_unknown_fields();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const CmdResponse_KvResponse& default_instance();
-
-  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
-  static inline const CmdResponse_KvResponse* internal_default_instance() {
-    return reinterpret_cast<const CmdResponse_KvResponse*>(
-               &_CmdResponse_KvResponse_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages =
-    12;
-
-  void Swap(CmdResponse_KvResponse* other);
-  friend void swap(CmdResponse_KvResponse& a, CmdResponse_KvResponse& b) {
-    a.Swap(&b);
-  }
-
-  // implements Message ----------------------------------------------
-
-  inline CmdResponse_KvResponse* New() const final {
-    return CreateMaybeMessage<CmdResponse_KvResponse>(NULL);
-  }
-
-  CmdResponse_KvResponse* New(::google::protobuf::Arena* arena) const final {
-    return CreateMaybeMessage<CmdResponse_KvResponse>(arena);
-  }
-  void CopyFrom(const ::google::protobuf::Message& from) final;
-  void MergeFrom(const ::google::protobuf::Message& from) final;
-  void CopyFrom(const CmdResponse_KvResponse& from);
-  void MergeFrom(const CmdResponse_KvResponse& from);
-  void Clear() final;
-  bool IsInitialized() const final;
-
-  size_t ByteSizeLong() const final;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) final;
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const final;
-  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* target) const final;
-  int GetCachedSize() const final { return _cached_size_.Get(); }
-
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const final;
-  void InternalSwap(CmdResponse_KvResponse* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return NULL;
-  }
-  inline void* MaybeArenaPtr() const {
-    return NULL;
-  }
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const final;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // optional bytes value = 1;
-  bool has_value() const;
-  void clear_value();
-  static const int kValueFieldNumber = 1;
-  const ::std::string& value() const;
-  void set_value(const ::std::string& value);
-  #if LANG_CXX11
-  void set_value(::std::string&& value);
-  #endif
-  void set_value(const char* value);
-  void set_value(const void* value, size_t size);
-  ::std::string* mutable_value();
-  ::std::string* release_value();
-  void set_allocated_value(::std::string* value);
-
-  // @@protoc_insertion_point(class_scope:floyd.CmdResponse.KvResponse)
- private:
-  void set_has_value();
-  void clear_has_value();
-
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::internal::HasBits<1> _has_bits_;
-  mutable ::google::protobuf::internal::CachedSize _cached_size_;
-  ::google::protobuf::internal::ArenaStringPtr value_;
-  friend struct ::protobuf_floyd_2eproto::TableStruct;
-};
-// -------------------------------------------------------------------
-
 class CmdResponse_McachedResponse : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:floyd.CmdResponse.McachedResponse) */ {
  public:
   CmdResponse_McachedResponse();
@@ -2320,7 +1773,7 @@ class CmdResponse_McachedResponse : public ::google::protobuf::Message /* @@prot
                &_CmdResponse_McachedResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    10;
 
   void Swap(CmdResponse_McachedResponse* other);
   friend void swap(CmdResponse_McachedResponse& a, CmdResponse_McachedResponse& b) {
@@ -2442,7 +1895,7 @@ class CmdResponse_ServerStatus : public ::google::protobuf::Message /* @@protoc_
                &_CmdResponse_ServerStatus_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    11;
 
   void Swap(CmdResponse_ServerStatus* other);
   friend void swap(CmdResponse_ServerStatus& a, CmdResponse_ServerStatus& b) {
@@ -2673,7 +2126,7 @@ class CmdResponse : public ::google::protobuf::Message /* @@protoc_insertion_poi
                &_CmdResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    12;
 
   void Swap(CmdResponse* other);
   friend void swap(CmdResponse& a, CmdResponse& b) {
@@ -2725,7 +2178,6 @@ class CmdResponse : public ::google::protobuf::Message /* @@protoc_insertion_poi
 
   typedef CmdResponse_RequestVoteResponse RequestVoteResponse;
   typedef CmdResponse_AppendEntriesResponse AppendEntriesResponse;
-  typedef CmdResponse_KvResponse KvResponse;
   typedef CmdResponse_McachedResponse McachedResponse;
   typedef CmdResponse_ServerStatus ServerStatus;
 
@@ -2770,22 +2222,10 @@ class CmdResponse : public ::google::protobuf::Message /* @@protoc_insertion_poi
   ::floyd::CmdResponse_AppendEntriesResponse* mutable_append_entries_res();
   void set_allocated_append_entries_res(::floyd::CmdResponse_AppendEntriesResponse* append_entries_res);
 
-  // optional .floyd.CmdResponse.KvResponse kv_response = 6;
-  bool has_kv_response() const;
-  void clear_kv_response();
-  static const int kKvResponseFieldNumber = 6;
-  private:
-  const ::floyd::CmdResponse_KvResponse& _internal_kv_response() const;
-  public:
-  const ::floyd::CmdResponse_KvResponse& kv_response() const;
-  ::floyd::CmdResponse_KvResponse* release_kv_response();
-  ::floyd::CmdResponse_KvResponse* mutable_kv_response();
-  void set_allocated_kv_response(::floyd::CmdResponse_KvResponse* kv_response);
-
-  // optional .floyd.CmdResponse.ServerStatus server_status = 7;
+  // optional .floyd.CmdResponse.ServerStatus server_status = 6;
   bool has_server_status() const;
   void clear_server_status();
-  static const int kServerStatusFieldNumber = 7;
+  static const int kServerStatusFieldNumber = 6;
   private:
   const ::floyd::CmdResponse_ServerStatus& _internal_server_status() const;
   public:
@@ -2794,10 +2234,10 @@ class CmdResponse : public ::google::protobuf::Message /* @@protoc_insertion_poi
   ::floyd::CmdResponse_ServerStatus* mutable_server_status();
   void set_allocated_server_status(::floyd::CmdResponse_ServerStatus* server_status);
 
-  // optional .floyd.Membership all_servers = 8;
+  // optional .floyd.Membership all_servers = 7;
   bool has_all_servers() const;
   void clear_all_servers();
-  static const int kAllServersFieldNumber = 8;
+  static const int kAllServersFieldNumber = 7;
   private:
   const ::floyd::Membership& _internal_all_servers() const;
   public:
@@ -2806,10 +2246,10 @@ class CmdResponse : public ::google::protobuf::Message /* @@protoc_insertion_poi
   ::floyd::Membership* mutable_all_servers();
   void set_allocated_all_servers(::floyd::Membership* all_servers);
 
-  // optional .floyd.CmdResponse.McachedResponse mcached_response = 9;
+  // optional .floyd.CmdResponse.McachedResponse mcached_response = 8;
   bool has_mcached_response() const;
   void clear_mcached_response();
-  static const int kMcachedResponseFieldNumber = 9;
+  static const int kMcachedResponseFieldNumber = 8;
   private:
   const ::floyd::CmdResponse_McachedResponse& _internal_mcached_response() const;
   public:
@@ -2844,8 +2284,6 @@ class CmdResponse : public ::google::protobuf::Message /* @@protoc_insertion_poi
   void clear_has_append_entries_res();
   void set_has_msg();
   void clear_has_msg();
-  void set_has_kv_response();
-  void clear_has_kv_response();
   void set_has_server_status();
   void clear_has_server_status();
   void set_has_all_servers();
@@ -2859,147 +2297,11 @@ class CmdResponse : public ::google::protobuf::Message /* @@protoc_insertion_poi
   ::google::protobuf::internal::ArenaStringPtr msg_;
   ::floyd::CmdResponse_RequestVoteResponse* request_vote_res_;
   ::floyd::CmdResponse_AppendEntriesResponse* append_entries_res_;
-  ::floyd::CmdResponse_KvResponse* kv_response_;
   ::floyd::CmdResponse_ServerStatus* server_status_;
   ::floyd::Membership* all_servers_;
   ::floyd::CmdResponse_McachedResponse* mcached_response_;
   int type_;
   int code_;
-  friend struct ::protobuf_floyd_2eproto::TableStruct;
-};
-// -------------------------------------------------------------------
-
-class Lock : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:floyd.Lock) */ {
- public:
-  Lock();
-  virtual ~Lock();
-
-  Lock(const Lock& from);
-
-  inline Lock& operator=(const Lock& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  #if LANG_CXX11
-  Lock(Lock&& from) noexcept
-    : Lock() {
-    *this = ::std::move(from);
-  }
-
-  inline Lock& operator=(Lock&& from) noexcept {
-    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-  #endif
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _internal_metadata_.unknown_fields();
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return _internal_metadata_.mutable_unknown_fields();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const Lock& default_instance();
-
-  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
-  static inline const Lock* internal_default_instance() {
-    return reinterpret_cast<const Lock*>(
-               &_Lock_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages =
-    16;
-
-  void Swap(Lock* other);
-  friend void swap(Lock& a, Lock& b) {
-    a.Swap(&b);
-  }
-
-  // implements Message ----------------------------------------------
-
-  inline Lock* New() const final {
-    return CreateMaybeMessage<Lock>(NULL);
-  }
-
-  Lock* New(::google::protobuf::Arena* arena) const final {
-    return CreateMaybeMessage<Lock>(arena);
-  }
-  void CopyFrom(const ::google::protobuf::Message& from) final;
-  void MergeFrom(const ::google::protobuf::Message& from) final;
-  void CopyFrom(const Lock& from);
-  void MergeFrom(const Lock& from);
-  void Clear() final;
-  bool IsInitialized() const final;
-
-  size_t ByteSizeLong() const final;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) final;
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const final;
-  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* target) const final;
-  int GetCachedSize() const final { return _cached_size_.Get(); }
-
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const final;
-  void InternalSwap(Lock* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return NULL;
-  }
-  inline void* MaybeArenaPtr() const {
-    return NULL;
-  }
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const final;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required bytes holder = 1;
-  bool has_holder() const;
-  void clear_holder();
-  static const int kHolderFieldNumber = 1;
-  const ::std::string& holder() const;
-  void set_holder(const ::std::string& value);
-  #if LANG_CXX11
-  void set_holder(::std::string&& value);
-  #endif
-  void set_holder(const char* value);
-  void set_holder(const void* value, size_t size);
-  ::std::string* mutable_holder();
-  ::std::string* release_holder();
-  void set_allocated_holder(::std::string* holder);
-
-  // required uint64 lease_end = 2;
-  bool has_lease_end() const;
-  void clear_lease_end();
-  static const int kLeaseEndFieldNumber = 2;
-  ::google::protobuf::uint64 lease_end() const;
-  void set_lease_end(::google::protobuf::uint64 value);
-
-  // @@protoc_insertion_point(class_scope:floyd.Lock)
- private:
-  void set_has_holder();
-  void clear_has_holder();
-  void set_has_lease_end();
-  void clear_has_lease_end();
-
-  // helper for ByteSizeLong()
-  size_t RequiredFieldsByteSizeFallback() const;
-
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::internal::HasBits<1> _has_bits_;
-  mutable ::google::protobuf::internal::CachedSize _cached_size_;
-  ::google::protobuf::internal::ArenaStringPtr holder_;
-  ::google::protobuf::uint64 lease_end_;
   friend struct ::protobuf_floyd_2eproto::TableStruct;
 };
 // -------------------------------------------------------------------
@@ -3046,7 +2348,7 @@ class Membership : public ::google::protobuf::Message /* @@protoc_insertion_poin
                &_Membership_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    17;
+    13;
 
   void Swap(Membership* other);
   friend void swap(Membership& a, Membership& b) {
@@ -3142,13 +2444,13 @@ class Membership : public ::google::protobuf::Message /* @@protoc_insertion_poin
 
 // optional uint64 term = 1;
 inline bool Entry::has_term() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
+  return (_has_bits_[0] & 0x00000002u) != 0;
 }
 inline void Entry::set_has_term() {
-  _has_bits_[0] |= 0x00000010u;
+  _has_bits_[0] |= 0x00000002u;
 }
 inline void Entry::clear_has_term() {
-  _has_bits_[0] &= ~0x00000010u;
+  _has_bits_[0] &= ~0x00000002u;
 }
 inline void Entry::clear_term() {
   term_ = GOOGLE_ULONGLONG(0);
@@ -3164,147 +2466,15 @@ inline void Entry::set_term(::google::protobuf::uint64 value) {
   // @@protoc_insertion_point(field_set:floyd.Entry.term)
 }
 
-// optional string key = 2;
-inline bool Entry::has_key() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void Entry::set_has_key() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void Entry::clear_has_key() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void Entry::clear_key() {
-  key_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_key();
-}
-inline const ::std::string& Entry::key() const {
-  // @@protoc_insertion_point(field_get:floyd.Entry.key)
-  return key_.GetNoArena();
-}
-inline void Entry::set_key(const ::std::string& value) {
-  set_has_key();
-  key_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:floyd.Entry.key)
-}
-#if LANG_CXX11
-inline void Entry::set_key(::std::string&& value) {
-  set_has_key();
-  key_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:floyd.Entry.key)
-}
-#endif
-inline void Entry::set_key(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  set_has_key();
-  key_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:floyd.Entry.key)
-}
-inline void Entry::set_key(const char* value, size_t size) {
-  set_has_key();
-  key_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:floyd.Entry.key)
-}
-inline ::std::string* Entry::mutable_key() {
-  set_has_key();
-  // @@protoc_insertion_point(field_mutable:floyd.Entry.key)
-  return key_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* Entry::release_key() {
-  // @@protoc_insertion_point(field_release:floyd.Entry.key)
-  if (!has_key()) {
-    return NULL;
-  }
-  clear_has_key();
-  return key_.ReleaseNonDefaultNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void Entry::set_allocated_key(::std::string* key) {
-  if (key != NULL) {
-    set_has_key();
-  } else {
-    clear_has_key();
-  }
-  key_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), key);
-  // @@protoc_insertion_point(field_set_allocated:floyd.Entry.key)
-}
-
-// optional bytes value = 3;
-inline bool Entry::has_value() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void Entry::set_has_value() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void Entry::clear_has_value() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void Entry::clear_value() {
-  value_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_value();
-}
-inline const ::std::string& Entry::value() const {
-  // @@protoc_insertion_point(field_get:floyd.Entry.value)
-  return value_.GetNoArena();
-}
-inline void Entry::set_value(const ::std::string& value) {
-  set_has_value();
-  value_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:floyd.Entry.value)
-}
-#if LANG_CXX11
-inline void Entry::set_value(::std::string&& value) {
-  set_has_value();
-  value_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:floyd.Entry.value)
-}
-#endif
-inline void Entry::set_value(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  set_has_value();
-  value_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:floyd.Entry.value)
-}
-inline void Entry::set_value(const void* value, size_t size) {
-  set_has_value();
-  value_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:floyd.Entry.value)
-}
-inline ::std::string* Entry::mutable_value() {
-  set_has_value();
-  // @@protoc_insertion_point(field_mutable:floyd.Entry.value)
-  return value_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* Entry::release_value() {
-  // @@protoc_insertion_point(field_release:floyd.Entry.value)
-  if (!has_value()) {
-    return NULL;
-  }
-  clear_has_value();
-  return value_.ReleaseNonDefaultNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void Entry::set_allocated_value(::std::string* value) {
-  if (value != NULL) {
-    set_has_value();
-  } else {
-    clear_has_value();
-  }
-  value_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set_allocated:floyd.Entry.value)
-}
-
-// required .floyd.Entry.OpType optype = 4;
+// required .floyd.Entry.OpType optype = 2;
 inline bool Entry::has_optype() const {
-  return (_has_bits_[0] & 0x00000040u) != 0;
+  return (_has_bits_[0] & 0x00000004u) != 0;
 }
 inline void Entry::set_has_optype() {
-  _has_bits_[0] |= 0x00000040u;
+  _has_bits_[0] |= 0x00000004u;
 }
 inline void Entry::clear_has_optype() {
-  _has_bits_[0] &= ~0x00000040u;
+  _has_bits_[0] &= ~0x00000004u;
 }
 inline void Entry::clear_optype() {
   optype_ = 0;
@@ -3321,105 +2491,15 @@ inline void Entry::set_optype(::floyd::Entry_OpType value) {
   // @@protoc_insertion_point(field_set:floyd.Entry.optype)
 }
 
-// optional bytes holder = 5;
-inline bool Entry::has_holder() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
-}
-inline void Entry::set_has_holder() {
-  _has_bits_[0] |= 0x00000004u;
-}
-inline void Entry::clear_has_holder() {
-  _has_bits_[0] &= ~0x00000004u;
-}
-inline void Entry::clear_holder() {
-  holder_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_holder();
-}
-inline const ::std::string& Entry::holder() const {
-  // @@protoc_insertion_point(field_get:floyd.Entry.holder)
-  return holder_.GetNoArena();
-}
-inline void Entry::set_holder(const ::std::string& value) {
-  set_has_holder();
-  holder_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:floyd.Entry.holder)
-}
-#if LANG_CXX11
-inline void Entry::set_holder(::std::string&& value) {
-  set_has_holder();
-  holder_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:floyd.Entry.holder)
-}
-#endif
-inline void Entry::set_holder(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  set_has_holder();
-  holder_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:floyd.Entry.holder)
-}
-inline void Entry::set_holder(const void* value, size_t size) {
-  set_has_holder();
-  holder_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:floyd.Entry.holder)
-}
-inline ::std::string* Entry::mutable_holder() {
-  set_has_holder();
-  // @@protoc_insertion_point(field_mutable:floyd.Entry.holder)
-  return holder_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* Entry::release_holder() {
-  // @@protoc_insertion_point(field_release:floyd.Entry.holder)
-  if (!has_holder()) {
-    return NULL;
-  }
-  clear_has_holder();
-  return holder_.ReleaseNonDefaultNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void Entry::set_allocated_holder(::std::string* holder) {
-  if (holder != NULL) {
-    set_has_holder();
-  } else {
-    clear_has_holder();
-  }
-  holder_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), holder);
-  // @@protoc_insertion_point(field_set_allocated:floyd.Entry.holder)
-}
-
-// optional uint64 lease_end = 6;
-inline bool Entry::has_lease_end() const {
-  return (_has_bits_[0] & 0x00000020u) != 0;
-}
-inline void Entry::set_has_lease_end() {
-  _has_bits_[0] |= 0x00000020u;
-}
-inline void Entry::clear_has_lease_end() {
-  _has_bits_[0] &= ~0x00000020u;
-}
-inline void Entry::clear_lease_end() {
-  lease_end_ = GOOGLE_ULONGLONG(0);
-  clear_has_lease_end();
-}
-inline ::google::protobuf::uint64 Entry::lease_end() const {
-  // @@protoc_insertion_point(field_get:floyd.Entry.lease_end)
-  return lease_end_;
-}
-inline void Entry::set_lease_end(::google::protobuf::uint64 value) {
-  set_has_lease_end();
-  lease_end_ = value;
-  // @@protoc_insertion_point(field_set:floyd.Entry.lease_end)
-}
-
-// optional bytes server = 7;
+// optional bytes server = 3;
 inline bool Entry::has_server() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
+  return (_has_bits_[0] & 0x00000001u) != 0;
 }
 inline void Entry::set_has_server() {
-  _has_bits_[0] |= 0x00000008u;
+  _has_bits_[0] |= 0x00000001u;
 }
 inline void Entry::clear_has_server() {
-  _has_bits_[0] &= ~0x00000008u;
+  _has_bits_[0] &= ~0x00000001u;
 }
 inline void Entry::clear_server() {
   server_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -3477,7 +2557,7 @@ inline void Entry::set_allocated_server(::std::string* server) {
   // @@protoc_insertion_point(field_set_allocated:floyd.Entry.server)
 }
 
-// repeated bytes args = 8;
+// repeated bytes args = 4;
 inline int Entry::args_size() const {
   return args_.size();
 }
@@ -3934,302 +3014,6 @@ CmdRequest_AppendEntries::entries() const {
 
 // -------------------------------------------------------------------
 
-// CmdRequest_KvRequest
-
-// required bytes key = 1;
-inline bool CmdRequest_KvRequest::has_key() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void CmdRequest_KvRequest::set_has_key() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void CmdRequest_KvRequest::clear_has_key() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void CmdRequest_KvRequest::clear_key() {
-  key_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_key();
-}
-inline const ::std::string& CmdRequest_KvRequest::key() const {
-  // @@protoc_insertion_point(field_get:floyd.CmdRequest.KvRequest.key)
-  return key_.GetNoArena();
-}
-inline void CmdRequest_KvRequest::set_key(const ::std::string& value) {
-  set_has_key();
-  key_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:floyd.CmdRequest.KvRequest.key)
-}
-#if LANG_CXX11
-inline void CmdRequest_KvRequest::set_key(::std::string&& value) {
-  set_has_key();
-  key_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:floyd.CmdRequest.KvRequest.key)
-}
-#endif
-inline void CmdRequest_KvRequest::set_key(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  set_has_key();
-  key_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:floyd.CmdRequest.KvRequest.key)
-}
-inline void CmdRequest_KvRequest::set_key(const void* value, size_t size) {
-  set_has_key();
-  key_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:floyd.CmdRequest.KvRequest.key)
-}
-inline ::std::string* CmdRequest_KvRequest::mutable_key() {
-  set_has_key();
-  // @@protoc_insertion_point(field_mutable:floyd.CmdRequest.KvRequest.key)
-  return key_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* CmdRequest_KvRequest::release_key() {
-  // @@protoc_insertion_point(field_release:floyd.CmdRequest.KvRequest.key)
-  if (!has_key()) {
-    return NULL;
-  }
-  clear_has_key();
-  return key_.ReleaseNonDefaultNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void CmdRequest_KvRequest::set_allocated_key(::std::string* key) {
-  if (key != NULL) {
-    set_has_key();
-  } else {
-    clear_has_key();
-  }
-  key_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), key);
-  // @@protoc_insertion_point(field_set_allocated:floyd.CmdRequest.KvRequest.key)
-}
-
-// optional bytes value = 2;
-inline bool CmdRequest_KvRequest::has_value() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void CmdRequest_KvRequest::set_has_value() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void CmdRequest_KvRequest::clear_has_value() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void CmdRequest_KvRequest::clear_value() {
-  value_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_value();
-}
-inline const ::std::string& CmdRequest_KvRequest::value() const {
-  // @@protoc_insertion_point(field_get:floyd.CmdRequest.KvRequest.value)
-  return value_.GetNoArena();
-}
-inline void CmdRequest_KvRequest::set_value(const ::std::string& value) {
-  set_has_value();
-  value_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:floyd.CmdRequest.KvRequest.value)
-}
-#if LANG_CXX11
-inline void CmdRequest_KvRequest::set_value(::std::string&& value) {
-  set_has_value();
-  value_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:floyd.CmdRequest.KvRequest.value)
-}
-#endif
-inline void CmdRequest_KvRequest::set_value(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  set_has_value();
-  value_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:floyd.CmdRequest.KvRequest.value)
-}
-inline void CmdRequest_KvRequest::set_value(const void* value, size_t size) {
-  set_has_value();
-  value_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:floyd.CmdRequest.KvRequest.value)
-}
-inline ::std::string* CmdRequest_KvRequest::mutable_value() {
-  set_has_value();
-  // @@protoc_insertion_point(field_mutable:floyd.CmdRequest.KvRequest.value)
-  return value_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* CmdRequest_KvRequest::release_value() {
-  // @@protoc_insertion_point(field_release:floyd.CmdRequest.KvRequest.value)
-  if (!has_value()) {
-    return NULL;
-  }
-  clear_has_value();
-  return value_.ReleaseNonDefaultNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void CmdRequest_KvRequest::set_allocated_value(::std::string* value) {
-  if (value != NULL) {
-    set_has_value();
-  } else {
-    clear_has_value();
-  }
-  value_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set_allocated:floyd.CmdRequest.KvRequest.value)
-}
-
-// -------------------------------------------------------------------
-
-// CmdRequest_LockRequest
-
-// required bytes name = 1;
-inline bool CmdRequest_LockRequest::has_name() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void CmdRequest_LockRequest::set_has_name() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void CmdRequest_LockRequest::clear_has_name() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void CmdRequest_LockRequest::clear_name() {
-  name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_name();
-}
-inline const ::std::string& CmdRequest_LockRequest::name() const {
-  // @@protoc_insertion_point(field_get:floyd.CmdRequest.LockRequest.name)
-  return name_.GetNoArena();
-}
-inline void CmdRequest_LockRequest::set_name(const ::std::string& value) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:floyd.CmdRequest.LockRequest.name)
-}
-#if LANG_CXX11
-inline void CmdRequest_LockRequest::set_name(::std::string&& value) {
-  set_has_name();
-  name_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:floyd.CmdRequest.LockRequest.name)
-}
-#endif
-inline void CmdRequest_LockRequest::set_name(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:floyd.CmdRequest.LockRequest.name)
-}
-inline void CmdRequest_LockRequest::set_name(const void* value, size_t size) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:floyd.CmdRequest.LockRequest.name)
-}
-inline ::std::string* CmdRequest_LockRequest::mutable_name() {
-  set_has_name();
-  // @@protoc_insertion_point(field_mutable:floyd.CmdRequest.LockRequest.name)
-  return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* CmdRequest_LockRequest::release_name() {
-  // @@protoc_insertion_point(field_release:floyd.CmdRequest.LockRequest.name)
-  if (!has_name()) {
-    return NULL;
-  }
-  clear_has_name();
-  return name_.ReleaseNonDefaultNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void CmdRequest_LockRequest::set_allocated_name(::std::string* name) {
-  if (name != NULL) {
-    set_has_name();
-  } else {
-    clear_has_name();
-  }
-  name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:floyd.CmdRequest.LockRequest.name)
-}
-
-// required bytes holder = 2;
-inline bool CmdRequest_LockRequest::has_holder() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void CmdRequest_LockRequest::set_has_holder() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void CmdRequest_LockRequest::clear_has_holder() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void CmdRequest_LockRequest::clear_holder() {
-  holder_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_holder();
-}
-inline const ::std::string& CmdRequest_LockRequest::holder() const {
-  // @@protoc_insertion_point(field_get:floyd.CmdRequest.LockRequest.holder)
-  return holder_.GetNoArena();
-}
-inline void CmdRequest_LockRequest::set_holder(const ::std::string& value) {
-  set_has_holder();
-  holder_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:floyd.CmdRequest.LockRequest.holder)
-}
-#if LANG_CXX11
-inline void CmdRequest_LockRequest::set_holder(::std::string&& value) {
-  set_has_holder();
-  holder_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:floyd.CmdRequest.LockRequest.holder)
-}
-#endif
-inline void CmdRequest_LockRequest::set_holder(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  set_has_holder();
-  holder_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:floyd.CmdRequest.LockRequest.holder)
-}
-inline void CmdRequest_LockRequest::set_holder(const void* value, size_t size) {
-  set_has_holder();
-  holder_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:floyd.CmdRequest.LockRequest.holder)
-}
-inline ::std::string* CmdRequest_LockRequest::mutable_holder() {
-  set_has_holder();
-  // @@protoc_insertion_point(field_mutable:floyd.CmdRequest.LockRequest.holder)
-  return holder_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* CmdRequest_LockRequest::release_holder() {
-  // @@protoc_insertion_point(field_release:floyd.CmdRequest.LockRequest.holder)
-  if (!has_holder()) {
-    return NULL;
-  }
-  clear_has_holder();
-  return holder_.ReleaseNonDefaultNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void CmdRequest_LockRequest::set_allocated_holder(::std::string* holder) {
-  if (holder != NULL) {
-    set_has_holder();
-  } else {
-    clear_has_holder();
-  }
-  holder_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), holder);
-  // @@protoc_insertion_point(field_set_allocated:floyd.CmdRequest.LockRequest.holder)
-}
-
-// optional uint64 lease_end = 3;
-inline bool CmdRequest_LockRequest::has_lease_end() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
-}
-inline void CmdRequest_LockRequest::set_has_lease_end() {
-  _has_bits_[0] |= 0x00000004u;
-}
-inline void CmdRequest_LockRequest::clear_has_lease_end() {
-  _has_bits_[0] &= ~0x00000004u;
-}
-inline void CmdRequest_LockRequest::clear_lease_end() {
-  lease_end_ = GOOGLE_ULONGLONG(0);
-  clear_has_lease_end();
-}
-inline ::google::protobuf::uint64 CmdRequest_LockRequest::lease_end() const {
-  // @@protoc_insertion_point(field_get:floyd.CmdRequest.LockRequest.lease_end)
-  return lease_end_;
-}
-inline void CmdRequest_LockRequest::set_lease_end(::google::protobuf::uint64 value) {
-  set_has_lease_end();
-  lease_end_ = value;
-  // @@protoc_insertion_point(field_set:floyd.CmdRequest.LockRequest.lease_end)
-}
-
-// -------------------------------------------------------------------
-
 // CmdRequest_AddServerRequest
 
 // required bytes new_server = 1;
@@ -4589,13 +3373,13 @@ CmdRequest_McachedRequest::mutable_args() {
 
 // required .floyd.Type type = 1;
 inline bool CmdRequest::has_type() const {
-  return (_has_bits_[0] & 0x00000100u) != 0;
+  return (_has_bits_[0] & 0x00000040u) != 0;
 }
 inline void CmdRequest::set_has_type() {
-  _has_bits_[0] |= 0x00000100u;
+  _has_bits_[0] |= 0x00000040u;
 }
 inline void CmdRequest::clear_has_type() {
-  _has_bits_[0] &= ~0x00000100u;
+  _has_bits_[0] &= ~0x00000040u;
 }
 inline void CmdRequest::clear_type() {
   type_ = 0;
@@ -4728,131 +3512,15 @@ inline void CmdRequest::set_allocated_append_entries(::floyd::CmdRequest_AppendE
   // @@protoc_insertion_point(field_set_allocated:floyd.CmdRequest.append_entries)
 }
 
-// optional .floyd.CmdRequest.KvRequest kv_request = 4;
-inline bool CmdRequest::has_kv_request() const {
+// optional .floyd.CmdRequest.ServerStatus server_status = 4;
+inline bool CmdRequest::has_server_status() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
-inline void CmdRequest::set_has_kv_request() {
+inline void CmdRequest::set_has_server_status() {
   _has_bits_[0] |= 0x00000004u;
 }
-inline void CmdRequest::clear_has_kv_request() {
-  _has_bits_[0] &= ~0x00000004u;
-}
-inline void CmdRequest::clear_kv_request() {
-  if (kv_request_ != NULL) kv_request_->Clear();
-  clear_has_kv_request();
-}
-inline const ::floyd::CmdRequest_KvRequest& CmdRequest::_internal_kv_request() const {
-  return *kv_request_;
-}
-inline const ::floyd::CmdRequest_KvRequest& CmdRequest::kv_request() const {
-  const ::floyd::CmdRequest_KvRequest* p = kv_request_;
-  // @@protoc_insertion_point(field_get:floyd.CmdRequest.kv_request)
-  return p != NULL ? *p : *reinterpret_cast<const ::floyd::CmdRequest_KvRequest*>(
-      &::floyd::_CmdRequest_KvRequest_default_instance_);
-}
-inline ::floyd::CmdRequest_KvRequest* CmdRequest::release_kv_request() {
-  // @@protoc_insertion_point(field_release:floyd.CmdRequest.kv_request)
-  clear_has_kv_request();
-  ::floyd::CmdRequest_KvRequest* temp = kv_request_;
-  kv_request_ = NULL;
-  return temp;
-}
-inline ::floyd::CmdRequest_KvRequest* CmdRequest::mutable_kv_request() {
-  set_has_kv_request();
-  if (kv_request_ == NULL) {
-    auto* p = CreateMaybeMessage<::floyd::CmdRequest_KvRequest>(GetArenaNoVirtual());
-    kv_request_ = p;
-  }
-  // @@protoc_insertion_point(field_mutable:floyd.CmdRequest.kv_request)
-  return kv_request_;
-}
-inline void CmdRequest::set_allocated_kv_request(::floyd::CmdRequest_KvRequest* kv_request) {
-  ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
-  if (message_arena == NULL) {
-    delete kv_request_;
-  }
-  if (kv_request) {
-    ::google::protobuf::Arena* submessage_arena = NULL;
-    if (message_arena != submessage_arena) {
-      kv_request = ::google::protobuf::internal::GetOwnedMessage(
-          message_arena, kv_request, submessage_arena);
-    }
-    set_has_kv_request();
-  } else {
-    clear_has_kv_request();
-  }
-  kv_request_ = kv_request;
-  // @@protoc_insertion_point(field_set_allocated:floyd.CmdRequest.kv_request)
-}
-
-// optional .floyd.CmdRequest.LockRequest lock_request = 5;
-inline bool CmdRequest::has_lock_request() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
-}
-inline void CmdRequest::set_has_lock_request() {
-  _has_bits_[0] |= 0x00000008u;
-}
-inline void CmdRequest::clear_has_lock_request() {
-  _has_bits_[0] &= ~0x00000008u;
-}
-inline void CmdRequest::clear_lock_request() {
-  if (lock_request_ != NULL) lock_request_->Clear();
-  clear_has_lock_request();
-}
-inline const ::floyd::CmdRequest_LockRequest& CmdRequest::_internal_lock_request() const {
-  return *lock_request_;
-}
-inline const ::floyd::CmdRequest_LockRequest& CmdRequest::lock_request() const {
-  const ::floyd::CmdRequest_LockRequest* p = lock_request_;
-  // @@protoc_insertion_point(field_get:floyd.CmdRequest.lock_request)
-  return p != NULL ? *p : *reinterpret_cast<const ::floyd::CmdRequest_LockRequest*>(
-      &::floyd::_CmdRequest_LockRequest_default_instance_);
-}
-inline ::floyd::CmdRequest_LockRequest* CmdRequest::release_lock_request() {
-  // @@protoc_insertion_point(field_release:floyd.CmdRequest.lock_request)
-  clear_has_lock_request();
-  ::floyd::CmdRequest_LockRequest* temp = lock_request_;
-  lock_request_ = NULL;
-  return temp;
-}
-inline ::floyd::CmdRequest_LockRequest* CmdRequest::mutable_lock_request() {
-  set_has_lock_request();
-  if (lock_request_ == NULL) {
-    auto* p = CreateMaybeMessage<::floyd::CmdRequest_LockRequest>(GetArenaNoVirtual());
-    lock_request_ = p;
-  }
-  // @@protoc_insertion_point(field_mutable:floyd.CmdRequest.lock_request)
-  return lock_request_;
-}
-inline void CmdRequest::set_allocated_lock_request(::floyd::CmdRequest_LockRequest* lock_request) {
-  ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
-  if (message_arena == NULL) {
-    delete lock_request_;
-  }
-  if (lock_request) {
-    ::google::protobuf::Arena* submessage_arena = NULL;
-    if (message_arena != submessage_arena) {
-      lock_request = ::google::protobuf::internal::GetOwnedMessage(
-          message_arena, lock_request, submessage_arena);
-    }
-    set_has_lock_request();
-  } else {
-    clear_has_lock_request();
-  }
-  lock_request_ = lock_request;
-  // @@protoc_insertion_point(field_set_allocated:floyd.CmdRequest.lock_request)
-}
-
-// optional .floyd.CmdRequest.ServerStatus server_status = 6;
-inline bool CmdRequest::has_server_status() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
-}
-inline void CmdRequest::set_has_server_status() {
-  _has_bits_[0] |= 0x00000010u;
-}
 inline void CmdRequest::clear_has_server_status() {
-  _has_bits_[0] &= ~0x00000010u;
+  _has_bits_[0] &= ~0x00000004u;
 }
 inline void CmdRequest::clear_server_status() {
   if (server_status_ != NULL) server_status_->Clear();
@@ -4902,15 +3570,15 @@ inline void CmdRequest::set_allocated_server_status(::floyd::CmdRequest_ServerSt
   // @@protoc_insertion_point(field_set_allocated:floyd.CmdRequest.server_status)
 }
 
-// optional .floyd.CmdRequest.AddServerRequest add_server_request = 7;
+// optional .floyd.CmdRequest.AddServerRequest add_server_request = 5;
 inline bool CmdRequest::has_add_server_request() const {
-  return (_has_bits_[0] & 0x00000020u) != 0;
+  return (_has_bits_[0] & 0x00000008u) != 0;
 }
 inline void CmdRequest::set_has_add_server_request() {
-  _has_bits_[0] |= 0x00000020u;
+  _has_bits_[0] |= 0x00000008u;
 }
 inline void CmdRequest::clear_has_add_server_request() {
-  _has_bits_[0] &= ~0x00000020u;
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void CmdRequest::clear_add_server_request() {
   if (add_server_request_ != NULL) add_server_request_->Clear();
@@ -4960,15 +3628,15 @@ inline void CmdRequest::set_allocated_add_server_request(::floyd::CmdRequest_Add
   // @@protoc_insertion_point(field_set_allocated:floyd.CmdRequest.add_server_request)
 }
 
-// optional .floyd.CmdRequest.RemoveServerRequest remove_server_request = 8;
+// optional .floyd.CmdRequest.RemoveServerRequest remove_server_request = 6;
 inline bool CmdRequest::has_remove_server_request() const {
-  return (_has_bits_[0] & 0x00000040u) != 0;
+  return (_has_bits_[0] & 0x00000010u) != 0;
 }
 inline void CmdRequest::set_has_remove_server_request() {
-  _has_bits_[0] |= 0x00000040u;
+  _has_bits_[0] |= 0x00000010u;
 }
 inline void CmdRequest::clear_has_remove_server_request() {
-  _has_bits_[0] &= ~0x00000040u;
+  _has_bits_[0] &= ~0x00000010u;
 }
 inline void CmdRequest::clear_remove_server_request() {
   if (remove_server_request_ != NULL) remove_server_request_->Clear();
@@ -5018,15 +3686,15 @@ inline void CmdRequest::set_allocated_remove_server_request(::floyd::CmdRequest_
   // @@protoc_insertion_point(field_set_allocated:floyd.CmdRequest.remove_server_request)
 }
 
-// optional .floyd.CmdRequest.McachedRequest mcached_request = 9;
+// optional .floyd.CmdRequest.McachedRequest mcached_request = 7;
 inline bool CmdRequest::has_mcached_request() const {
-  return (_has_bits_[0] & 0x00000080u) != 0;
+  return (_has_bits_[0] & 0x00000020u) != 0;
 }
 inline void CmdRequest::set_has_mcached_request() {
-  _has_bits_[0] |= 0x00000080u;
+  _has_bits_[0] |= 0x00000020u;
 }
 inline void CmdRequest::clear_has_mcached_request() {
-  _has_bits_[0] &= ~0x00000080u;
+  _has_bits_[0] &= ~0x00000020u;
 }
 inline void CmdRequest::clear_mcached_request() {
   if (mcached_request_ != NULL) mcached_request_->Clear();
@@ -5202,76 +3870,6 @@ inline void CmdResponse_AppendEntriesResponse::set_last_log_index(::google::prot
   set_has_last_log_index();
   last_log_index_ = value;
   // @@protoc_insertion_point(field_set:floyd.CmdResponse.AppendEntriesResponse.last_log_index)
-}
-
-// -------------------------------------------------------------------
-
-// CmdResponse_KvResponse
-
-// optional bytes value = 1;
-inline bool CmdResponse_KvResponse::has_value() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void CmdResponse_KvResponse::set_has_value() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void CmdResponse_KvResponse::clear_has_value() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void CmdResponse_KvResponse::clear_value() {
-  value_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_value();
-}
-inline const ::std::string& CmdResponse_KvResponse::value() const {
-  // @@protoc_insertion_point(field_get:floyd.CmdResponse.KvResponse.value)
-  return value_.GetNoArena();
-}
-inline void CmdResponse_KvResponse::set_value(const ::std::string& value) {
-  set_has_value();
-  value_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:floyd.CmdResponse.KvResponse.value)
-}
-#if LANG_CXX11
-inline void CmdResponse_KvResponse::set_value(::std::string&& value) {
-  set_has_value();
-  value_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:floyd.CmdResponse.KvResponse.value)
-}
-#endif
-inline void CmdResponse_KvResponse::set_value(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  set_has_value();
-  value_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:floyd.CmdResponse.KvResponse.value)
-}
-inline void CmdResponse_KvResponse::set_value(const void* value, size_t size) {
-  set_has_value();
-  value_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:floyd.CmdResponse.KvResponse.value)
-}
-inline ::std::string* CmdResponse_KvResponse::mutable_value() {
-  set_has_value();
-  // @@protoc_insertion_point(field_mutable:floyd.CmdResponse.KvResponse.value)
-  return value_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* CmdResponse_KvResponse::release_value() {
-  // @@protoc_insertion_point(field_release:floyd.CmdResponse.KvResponse.value)
-  if (!has_value()) {
-    return NULL;
-  }
-  clear_has_value();
-  return value_.ReleaseNonDefaultNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void CmdResponse_KvResponse::set_allocated_value(::std::string* value) {
-  if (value != NULL) {
-    set_has_value();
-  } else {
-    clear_has_value();
-  }
-  value_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set_allocated:floyd.CmdResponse.KvResponse.value)
 }
 
 // -------------------------------------------------------------------
@@ -5720,13 +4318,13 @@ inline void CmdResponse_ServerStatus::set_last_applied(::google::protobuf::uint6
 
 // required .floyd.Type type = 1;
 inline bool CmdResponse::has_type() const {
-  return (_has_bits_[0] & 0x00000080u) != 0;
+  return (_has_bits_[0] & 0x00000040u) != 0;
 }
 inline void CmdResponse::set_has_type() {
-  _has_bits_[0] |= 0x00000080u;
+  _has_bits_[0] |= 0x00000040u;
 }
 inline void CmdResponse::clear_has_type() {
-  _has_bits_[0] &= ~0x00000080u;
+  _has_bits_[0] &= ~0x00000040u;
 }
 inline void CmdResponse::clear_type() {
   type_ = 0;
@@ -5745,13 +4343,13 @@ inline void CmdResponse::set_type(::floyd::Type value) {
 
 // optional .floyd.StatusCode code = 2;
 inline bool CmdResponse::has_code() const {
-  return (_has_bits_[0] & 0x00000100u) != 0;
+  return (_has_bits_[0] & 0x00000080u) != 0;
 }
 inline void CmdResponse::set_has_code() {
-  _has_bits_[0] |= 0x00000100u;
+  _has_bits_[0] |= 0x00000080u;
 }
 inline void CmdResponse::clear_has_code() {
-  _has_bits_[0] &= ~0x00000100u;
+  _has_bits_[0] &= ~0x00000080u;
 }
 inline void CmdResponse::clear_code() {
   code_ = 0;
@@ -5950,73 +4548,15 @@ inline void CmdResponse::set_allocated_msg(::std::string* msg) {
   // @@protoc_insertion_point(field_set_allocated:floyd.CmdResponse.msg)
 }
 
-// optional .floyd.CmdResponse.KvResponse kv_response = 6;
-inline bool CmdResponse::has_kv_response() const {
+// optional .floyd.CmdResponse.ServerStatus server_status = 6;
+inline bool CmdResponse::has_server_status() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
-inline void CmdResponse::set_has_kv_response() {
+inline void CmdResponse::set_has_server_status() {
   _has_bits_[0] |= 0x00000008u;
 }
-inline void CmdResponse::clear_has_kv_response() {
-  _has_bits_[0] &= ~0x00000008u;
-}
-inline void CmdResponse::clear_kv_response() {
-  if (kv_response_ != NULL) kv_response_->Clear();
-  clear_has_kv_response();
-}
-inline const ::floyd::CmdResponse_KvResponse& CmdResponse::_internal_kv_response() const {
-  return *kv_response_;
-}
-inline const ::floyd::CmdResponse_KvResponse& CmdResponse::kv_response() const {
-  const ::floyd::CmdResponse_KvResponse* p = kv_response_;
-  // @@protoc_insertion_point(field_get:floyd.CmdResponse.kv_response)
-  return p != NULL ? *p : *reinterpret_cast<const ::floyd::CmdResponse_KvResponse*>(
-      &::floyd::_CmdResponse_KvResponse_default_instance_);
-}
-inline ::floyd::CmdResponse_KvResponse* CmdResponse::release_kv_response() {
-  // @@protoc_insertion_point(field_release:floyd.CmdResponse.kv_response)
-  clear_has_kv_response();
-  ::floyd::CmdResponse_KvResponse* temp = kv_response_;
-  kv_response_ = NULL;
-  return temp;
-}
-inline ::floyd::CmdResponse_KvResponse* CmdResponse::mutable_kv_response() {
-  set_has_kv_response();
-  if (kv_response_ == NULL) {
-    auto* p = CreateMaybeMessage<::floyd::CmdResponse_KvResponse>(GetArenaNoVirtual());
-    kv_response_ = p;
-  }
-  // @@protoc_insertion_point(field_mutable:floyd.CmdResponse.kv_response)
-  return kv_response_;
-}
-inline void CmdResponse::set_allocated_kv_response(::floyd::CmdResponse_KvResponse* kv_response) {
-  ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
-  if (message_arena == NULL) {
-    delete kv_response_;
-  }
-  if (kv_response) {
-    ::google::protobuf::Arena* submessage_arena = NULL;
-    if (message_arena != submessage_arena) {
-      kv_response = ::google::protobuf::internal::GetOwnedMessage(
-          message_arena, kv_response, submessage_arena);
-    }
-    set_has_kv_response();
-  } else {
-    clear_has_kv_response();
-  }
-  kv_response_ = kv_response;
-  // @@protoc_insertion_point(field_set_allocated:floyd.CmdResponse.kv_response)
-}
-
-// optional .floyd.CmdResponse.ServerStatus server_status = 7;
-inline bool CmdResponse::has_server_status() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
-}
-inline void CmdResponse::set_has_server_status() {
-  _has_bits_[0] |= 0x00000010u;
-}
 inline void CmdResponse::clear_has_server_status() {
-  _has_bits_[0] &= ~0x00000010u;
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void CmdResponse::clear_server_status() {
   if (server_status_ != NULL) server_status_->Clear();
@@ -6066,15 +4606,15 @@ inline void CmdResponse::set_allocated_server_status(::floyd::CmdResponse_Server
   // @@protoc_insertion_point(field_set_allocated:floyd.CmdResponse.server_status)
 }
 
-// optional .floyd.Membership all_servers = 8;
+// optional .floyd.Membership all_servers = 7;
 inline bool CmdResponse::has_all_servers() const {
-  return (_has_bits_[0] & 0x00000020u) != 0;
+  return (_has_bits_[0] & 0x00000010u) != 0;
 }
 inline void CmdResponse::set_has_all_servers() {
-  _has_bits_[0] |= 0x00000020u;
+  _has_bits_[0] |= 0x00000010u;
 }
 inline void CmdResponse::clear_has_all_servers() {
-  _has_bits_[0] &= ~0x00000020u;
+  _has_bits_[0] &= ~0x00000010u;
 }
 inline void CmdResponse::clear_all_servers() {
   if (all_servers_ != NULL) all_servers_->Clear();
@@ -6124,15 +4664,15 @@ inline void CmdResponse::set_allocated_all_servers(::floyd::Membership* all_serv
   // @@protoc_insertion_point(field_set_allocated:floyd.CmdResponse.all_servers)
 }
 
-// optional .floyd.CmdResponse.McachedResponse mcached_response = 9;
+// optional .floyd.CmdResponse.McachedResponse mcached_response = 8;
 inline bool CmdResponse::has_mcached_response() const {
-  return (_has_bits_[0] & 0x00000040u) != 0;
+  return (_has_bits_[0] & 0x00000020u) != 0;
 }
 inline void CmdResponse::set_has_mcached_response() {
-  _has_bits_[0] |= 0x00000040u;
+  _has_bits_[0] |= 0x00000020u;
 }
 inline void CmdResponse::clear_has_mcached_response() {
-  _has_bits_[0] &= ~0x00000040u;
+  _has_bits_[0] &= ~0x00000020u;
 }
 inline void CmdResponse::clear_mcached_response() {
   if (mcached_response_ != NULL) mcached_response_->Clear();
@@ -6180,100 +4720,6 @@ inline void CmdResponse::set_allocated_mcached_response(::floyd::CmdResponse_Mca
   }
   mcached_response_ = mcached_response;
   // @@protoc_insertion_point(field_set_allocated:floyd.CmdResponse.mcached_response)
-}
-
-// -------------------------------------------------------------------
-
-// Lock
-
-// required bytes holder = 1;
-inline bool Lock::has_holder() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void Lock::set_has_holder() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void Lock::clear_has_holder() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void Lock::clear_holder() {
-  holder_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_holder();
-}
-inline const ::std::string& Lock::holder() const {
-  // @@protoc_insertion_point(field_get:floyd.Lock.holder)
-  return holder_.GetNoArena();
-}
-inline void Lock::set_holder(const ::std::string& value) {
-  set_has_holder();
-  holder_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:floyd.Lock.holder)
-}
-#if LANG_CXX11
-inline void Lock::set_holder(::std::string&& value) {
-  set_has_holder();
-  holder_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:floyd.Lock.holder)
-}
-#endif
-inline void Lock::set_holder(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  set_has_holder();
-  holder_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:floyd.Lock.holder)
-}
-inline void Lock::set_holder(const void* value, size_t size) {
-  set_has_holder();
-  holder_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:floyd.Lock.holder)
-}
-inline ::std::string* Lock::mutable_holder() {
-  set_has_holder();
-  // @@protoc_insertion_point(field_mutable:floyd.Lock.holder)
-  return holder_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* Lock::release_holder() {
-  // @@protoc_insertion_point(field_release:floyd.Lock.holder)
-  if (!has_holder()) {
-    return NULL;
-  }
-  clear_has_holder();
-  return holder_.ReleaseNonDefaultNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void Lock::set_allocated_holder(::std::string* holder) {
-  if (holder != NULL) {
-    set_has_holder();
-  } else {
-    clear_has_holder();
-  }
-  holder_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), holder);
-  // @@protoc_insertion_point(field_set_allocated:floyd.Lock.holder)
-}
-
-// required uint64 lease_end = 2;
-inline bool Lock::has_lease_end() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void Lock::set_has_lease_end() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void Lock::clear_has_lease_end() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void Lock::clear_lease_end() {
-  lease_end_ = GOOGLE_ULONGLONG(0);
-  clear_has_lease_end();
-}
-inline ::google::protobuf::uint64 Lock::lease_end() const {
-  // @@protoc_insertion_point(field_get:floyd.Lock.lease_end)
-  return lease_end_;
-}
-inline void Lock::set_lease_end(::google::protobuf::uint64 value) {
-  set_has_lease_end();
-  lease_end_ = value;
-  // @@protoc_insertion_point(field_set:floyd.Lock.lease_end)
 }
 
 // -------------------------------------------------------------------
@@ -6352,14 +4798,6 @@ Membership::mutable_nodes() {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
-// -------------------------------------------------------------------
-
-// -------------------------------------------------------------------
-
-// -------------------------------------------------------------------
-
-// -------------------------------------------------------------------
-
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

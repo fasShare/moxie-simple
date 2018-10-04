@@ -9,6 +9,7 @@
 #include "floyd/src/floyd_context.h"
 #include "slash/include/slash_status.h"
 #include "pink/include/bg_thread.h"
+#include "rocksdb/db.h"
 
 namespace floyd {
 

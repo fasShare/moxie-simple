@@ -77,10 +77,10 @@ message CmdRequest {
   required Type type = 1;
   optional RequestVote request_vote = 2;
   optional AppendEntries append_entries = 3;
-  optional ServerStatus server_status = 6;
-  optional AddServerRequest add_server_request = 7;
-  optional RemoveServerRequest remove_server_request = 8;
-  optional McachedRequest mcached_request = 9;
+  optional ServerStatus server_status = 4;
+  optional AddServerRequest add_server_request = 5;
+  optional RemoveServerRequest remove_server_request = 6;
+  optional McachedRequest mcached_request = 7;
 }
 
 enum StatusCode {
@@ -124,11 +124,13 @@ message CmdResponse {
   optional RequestVoteResponse request_vote_res = 3;
   optional AppendEntriesResponse append_entries_res = 4;
   optional bytes msg = 5;
-  optional ServerStatus server_status = 7;
-  optional Membership all_servers = 8;
-  optional McachedResponse mcached_response = 9;
+  optional ServerStatus server_status = 6;
+  optional Membership all_servers = 7;
+  optional McachedResponse mcached_response = 8;
 }
 
-
+message Membership {
+  repeated bytes nodes = 1;
+}
 
 

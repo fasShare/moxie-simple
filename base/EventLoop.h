@@ -3,11 +3,14 @@
 #include <memory>
 #include <assert.h>
 #include <unordered_map>
+#include <atomic>
 
 #include <PollerEvent.h>
 #include <SigIgnore.h>
 #include <Handler.h>
 #include <Epoll.h>
+#include <Mutex.h>
+#include <MutexLocker.h>
 #include <TimerEngine.h>
 
 namespace moxie {
@@ -34,7 +37,7 @@ private:
 private:
     Epoll *epoll_;
     std::unordered_map<int, EventContext*> contexts_;
-    bool quit_;
+    std::atomic_bool quit_;
     SigIgnore ignore_;
     static size_t kEpollRetBufSize;
     static size_t kDefaultTimeOut;

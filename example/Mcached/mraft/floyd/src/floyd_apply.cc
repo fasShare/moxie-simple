@@ -14,6 +14,7 @@
 #include "slash/include/env.h"
 
 #include "floyd/src/logger.h"
+#include "rocksdb/db.h"
 #include "floyd/src/floyd.pb.h"
 #include "floyd/src/raft_meta.h"
 #include "floyd/src/raft_log.h"
@@ -95,7 +96,6 @@ void FloydApply::ApplyStateMachine() {
 
 rocksdb::Status FloydApply::Apply(const Entry& entry) {
   rocksdb::Status ret;
-  Lock lock;
   std::string val;
   // be careful:
   // we need to return the ret carefully

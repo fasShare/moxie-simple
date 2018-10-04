@@ -21,8 +21,6 @@ public:
 
     std::string getName();
     void setName(const std::string& name);
-
-    ~Thread();
 private:
     friend void* run(void *);
     void ThreadFunc();
