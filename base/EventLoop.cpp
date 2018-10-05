@@ -6,7 +6,8 @@ size_t moxie::EventLoop::kDefaultTimeOut = 1000;
 
 moxie::EventLoop::EventLoop() :
     epoll_(new (std::nothrow) Epoll()),
-    quit_(false) {
+    quit_(false),
+    started_(false) {
     if (!epoll_) {
         assert(false);
     }
@@ -95,7 +96,7 @@ bool moxie::EventLoop::UnregisterTimer(Timer* timer) {
 void moxie::EventLoop::Loop() {
     std::vector<struct epoll_event> epoll_ret_buf;
     epoll_ret_buf.resize(kEpollRetBufSize);
-
+    started_ = true;
     while (!quit_) {
         int ret = epoll_->LoopWait(epoll_ret_buf.data(), kEpollRetBufSize, kDefaultTimeOut);
         if (ret < 0) {
@@ -133,4 +134,8 @@ void moxie::EventLoop::Loop() {
 
 void moxie::EventLoop::Quit() {
     quit_ = true;
+}
+
+bool moxie::EventLoop::Started() const {
+    return started_;
 }

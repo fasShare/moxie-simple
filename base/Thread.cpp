@@ -30,7 +30,7 @@ bool moxie::Thread::setThreadFunc(std::function<void ()> threadFunc) {
     return true;
 }
 
-bool moxie::Thread::join() {
+bool moxie::Thread::Join() {
     errno = ::pthread_join(threadId_, NULL);
     if (errno != 0) {
         LOGGER_SYSERR("ERROR pthread_join : " <<  ::strerror(errno));
@@ -43,7 +43,11 @@ bool moxie::Thread::MainThread() {
     return gettid() == ::getpid();
 }
 
-bool moxie::Thread::start() {
+bool moxie::Thread::Stop() {
+    return 0 == pthread_cancel(this->threadId_);
+}
+
+bool moxie::Thread::Start() {
     errno = ::pthread_create(&threadId_, NULL, &run, this);
     if (errno != 0) {
         LOGGER_SYSERR("ERROR pthread_create : " << ::strerror(errno));

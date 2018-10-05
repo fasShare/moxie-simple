@@ -12,7 +12,7 @@ moxie:${base_srcs} ${base_headers}
 	$(CC) Echo.cpp  -I${moxie_base} -I./ -L${moxie_libs} $(cflags) -o Example_bin_Echo  $(libs)
 	$(CC) MultiThreadEcho.cpp  -I${moxie_base} -I./ -L${moxie_libs} $(cflags) -o Example_bin_MultiThreadEcho  $(libs)
 	$(CC) TimerExam.cpp  -I${moxie_base} -I./ -L${moxie_libs} $(cflags) -o Example_bin_TimerExam  $(libs)
-	$(CC) InqueueThreadExam.cpp  -I${moxie_base} -I./ -L${moxie_libs} $(cflags) -o Example_bin_InqueueThreadExam  $(libs)
+	$(CC) EventLoopThreadExam.cpp  -I${moxie_base} -I./ -L${moxie_libs} $(cflags) -o Example_bin_EventLoopThreadExam  $(libs)
 	make -C ./Mcached
 	make -C ./http
 

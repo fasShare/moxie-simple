@@ -15,16 +15,15 @@ public:
     Thread(std::function<void ()> threadFunc, const std::string name);
 
     bool setThreadFunc(std::function<void ()> threadFunc);
-    bool join();
+    bool Join();
+    bool Stop();
     bool MainThread();
-    bool start();
-
+    bool Start();
     std::string getName();
     void setName(const std::string& name);
 private:
     friend void* run(void *);
     void ThreadFunc();
-
     pthread_t threadId_;
     std::string name_;
     std::function<void ()> threadFunc_;

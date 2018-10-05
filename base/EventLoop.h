@@ -28,6 +28,7 @@ public:
 
     void Loop();
     void Quit();
+    bool Started() const;
 private:
     struct EventContext {
         int fd;
@@ -38,6 +39,7 @@ private:
     Epoll *epoll_;
     std::unordered_map<int, EventContext*> contexts_;
     std::atomic_bool quit_;
+    std::atomic_bool started_;
     SigIgnore ignore_;
     static size_t kEpollRetBufSize;
     static size_t kDefaultTimeOut;

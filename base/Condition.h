@@ -2,32 +2,25 @@
 #define MOXIE_CONDITION_H
 #include <pthread.h>
 
-#include <Mutex.h>
+
+#include <boost/noncopyable.hpp>
 
 namespace moxie {
 
-class Condition {
+class Mutex;
+
+class Condition : boost::noncopyable {
 public:
-    Condition(Mutex& mutex) :
-        mutex_(mutex) {
-        ::pthread_cond_init(&cond_, NULL);
-    }
-    ~Condition() {
-        ::pthread_cond_destroy(&cond_);
-    }
+    Condition(Mutex& mutex);
+    ~Condition() ;
 
-    void wait() {
-        ::pthread_cond_wait(&cond_, mutex_.getMutex());
-    }
-
+    void wait();
+    // returns true if time out, false otherwise.
     bool waitForSeconds(int seconds);
 
-    void notify() {
-        ::pthread_cond_signal(&cond_);
-    }
-    void notifyAll() {
-        ::pthread_cond_broadcast(&cond_);
-    }
+    void notify() ;
+    void notifyAll();
+
 private:
     Mutex& mutex_;
     pthread_cond_t cond_;

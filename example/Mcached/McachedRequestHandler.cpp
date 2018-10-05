@@ -14,6 +14,7 @@ void moxie::McachedClientHandler::AfetrRead(const std::shared_ptr<PollerEvent>& 
     if (ParseRedisRequest()) {
         DoMcachedCammand();
     } 
+    
     if (writeBuf_.writableBytes()) {
         event_->EnableWrite();
         loop->Modity(event);
