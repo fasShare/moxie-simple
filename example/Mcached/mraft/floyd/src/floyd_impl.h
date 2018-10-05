@@ -83,6 +83,7 @@ class FloydImpl : public Floyd {
 
   std::shared_ptr<moxie::Mcached> cached_;
   rocksdb::DB* db_;
+  rocksdb::DB* log_;
   // state machine db point
   // raft log
   RaftLog* raft_log_;

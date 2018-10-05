@@ -254,8 +254,14 @@ Status FloydImpl::Init() {
     return Status::Corruption("Open DB failed, " + s.ToString());
   }
 
+  s = rocksdb::DB::Open(options, options_.path + "/log/", &log_);
+  if (!s.ok()) {
+    LOGV(ERROR_LEVEL, info_log_, "Open DB log_and_meta failed! path: %s", options_.path.c_str());
+    return Status::Corruption("Open DB log_and_meta failed, " + s.ToString());
+  }
+
   // Recover Context
-  raft_log_ = new RaftLog(info_log_);
+  raft_log_ = new RaftLog(log_, info_log_);
   raft_meta_ = new RaftMeta(info_log_);
   raft_meta_->Init();
   context_ = new FloydContext(options_);
@@ -514,7 +520,6 @@ Status FloydImpl::ExecMcached(const std::vector<std::string>& args, std::string&
   } else {
     res = response.mcached_response().value();
   }
-  std::cout << "res:" << res << std::endl;
   if (response.code() == StatusCode::kOk) {
     return Status::OK();
   }

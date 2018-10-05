@@ -11,8 +11,11 @@
 #include <atomic>
 #include <string>
 #include <vector>
+#include <atomic>
 #include <map>
 
+#include "rocksdb/db.h"
+#include "pink/include/bg_thread.h"
 #include "slash/include/slash_mutex.h"
 
 namespace floyd {
@@ -22,7 +25,7 @@ class Entry;
 
 class RaftLog {
  public:
-  RaftLog(Logger* info_log);
+  RaftLog(rocksdb::DB* log_, Logger* info_log);
   ~RaftLog();
 
   uint64_t Append(const std::vector<const Entry *> &entries);
@@ -32,15 +35,22 @@ class RaftLog {
   uint64_t GetLastLogIndex();
   bool GetLastLogTermAndIndex(uint64_t* last_log_term, uint64_t* last_log_index);
   int TruncateSuffix(uint64_t index);
-
- private:
+private:
+  void DumpLogTask();
+  static void DumpLogTaskWrapper(void* arg);
+private:
   std::map<uint64_t, std::string> db_;
   Logger* const info_log_;
+  rocksdb::DB* log_;
+  pink::BGThread dump_log_thread_; 
+  std::atomic_bool is_dump_;
+
   /*
    * mutex for last_log_index_
    */
   slash::Mutex lli_mutex_;
   uint64_t last_log_index_;
+  uint64_t offset_;
 
   /*
    * we don't store last_log_index_ in rocksdb, since if we store it in rocksdb

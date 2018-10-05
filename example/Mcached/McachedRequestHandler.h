@@ -22,14 +22,14 @@ private:
     public:
         ResetArgcArgv(size_t& argc, std::vector<std::string>& argv) 
             : argc_(argc),
-            argv_(argv) {}
+              argv_(argv) {}
         ~ResetArgcArgv() {
             argc_ = 0;
             argv_.clear();
         }
     private:
-            size_t& argc_;
-            std::vector<std::string>& argv_;
+        size_t& argc_;
+        std::vector<std::string>& argv_;
     };
 
     bool DoMcachedCammand();
