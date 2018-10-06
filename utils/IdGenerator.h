@@ -1,11 +1,14 @@
 #ifndef MOXIE_IDGENERATOR_H
 #define MOXIE_IDGENERATOR_H
+#include <stdint.h>
 
 #include <Mutex.h>
-#include <MutexLocker.h>
 #include <Timestamp.h>
+#include <MutexLocker.h>
 
 namespace moxie {
+
+namespace utils {
 
 class IdGenerator {
 public:
@@ -19,9 +22,10 @@ private:
     static const uint32_t kSuffixLen = kTsLen + kCntLen;
     uint64_t prefix_;
     uint64_t suffix_;
-    Mutex mutex_;
+    moxie::Mutex mutex_;
 };
 
+}
 }
 
 #endif 
