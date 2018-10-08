@@ -4,3 +4,5 @@ cur_dir=`pwd`
 mypath=`cd ${cur_dir}; cd ../; pwd`
 GOPATH=$GOPATH:${mypath}
 go build -o McachedManager
+mkdir -p bin
+mv McachedManager ./bin/
