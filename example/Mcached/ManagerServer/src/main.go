@@ -1,14 +1,10 @@
 package main;
 
 import (
-	"time"
 	"Mcached"
 	"log"
 	"os"
 	"strings"
-	"go.etcd.io/etcd/clientv3"
-	"context"
-	"fmt"
 )
 
 func main() {
@@ -51,39 +47,6 @@ func main() {
 	}
 
 	log.Println("Log_file:", cfg.LogFile, " Local_addr:", cfg.LocalAddr, " Etcd_addr:", cfg.EtcdAddr)
-
-
-	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   cfg.EtcdAddr[:],
-		DialTimeout: time.Second * 1,
-	})
-	if err != nil {
-		log.Panicln("Create etcdclientv3 error:", err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
-	resp, err := cli.Get(ctx, "/Mcached/Slots/", clientv3.WithPrefix())
-	cancel()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Slots count:", resp.Count)
-	for _, ev := range resp.Kvs {
-		fmt.Printf("%s : %s\n", ev.Key, ev.Value)
-	}	
-
-	// "/Mcached/GroupId/"
-	ctx, cancel = context.WithTimeout(context.Background(), 5 * time.Second)
-	resp, err = cli.Get(ctx, "/Mcached/GroupId/", clientv3.WithPrefix())
-	cancel()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("GroupId count:", resp.Count)
-	for _, ev := range resp.Kvs {
-		fmt.Printf("%s : %s\n", ev.Key, ev.Value)
-	}
-
 	var server Mcached.McachedManagerServer
 	server.Init(cfg)
 	server.Run()

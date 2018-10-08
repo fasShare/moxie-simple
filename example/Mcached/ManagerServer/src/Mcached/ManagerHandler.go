@@ -10,7 +10,6 @@ import (
 	"context"
 	"sync"
 	"fmt"
-	"errors"
 	"go.etcd.io/etcd/clientv3"
 	"go.etcd.io/etcd/clientv3/concurrency"
 )
@@ -39,6 +38,7 @@ const (
 	EtcdGetRequestTimeout			= 5 * time.Second
 	UpdateSlotsCacheGroupDela		= 60 * time.Second
 	LeaderSessionLeaseTTL			= 1
+
 	McachedSlotsStart				= 1
 	McachedSlotsEnd					= 1025
 	CacheGroupIdStart				= 1
@@ -87,44 +87,11 @@ type McachedManagerServer struct {
 	sgc_mutex 					sync.Mutex
 
 	slots_group_mutex			sync.Mutex
-	SlotsInfo 					[]*SlotItem
+	SlotsInfo 					map[uint64]*SlotItem
+	SlotsIdlist					[]uint64
 	CacheGroupInfo				map[uint64]*CacheGroupItem
+	CacheGroupIdList			[]uint64
 	updateSlotsCaches			*time.Ticker
-}
-
-func (server *McachedManagerServer) InfoLogger(info ...interface{}) {
-	if server.logger == nil {
-		return
-	}
-	server.logger.SetPrefix("[INFO]")
-	server.logger.Println(info)
-}
-
-func (server *McachedManagerServer) WarnLogger(info ...interface{}) {
-	if server.logger == nil {
-		log.Panicln("server.logger is nil!")
-		return
-	}
-	server.logger.SetPrefix("[WARN]")
-	server.logger.Println(info)
-}
-
-func (server *McachedManagerServer) ErrorLogger(info ...interface{}) {
-	if server.logger == nil {
-		log.Panicln("server.logger is nil!")
-		return
-	}
-	server.logger.SetPrefix("[ERROR]")
-	server.logger.Println(info)
-}
-
-func (server *McachedManagerServer) FatalLogger(info ...interface{}) {
-	if server.logger == nil {
-		log.Panicln("server.logger is nil!")
-		return
-	}
-	server.logger.SetPrefix("[FATAL]")
-	server.logger.Panicln(info)
 }
 
 func (server *McachedManagerServer) Init(cfg *Mconf) bool {
@@ -150,6 +117,53 @@ func (server *McachedManagerServer) Init(cfg *Mconf) bool {
 	}
 	signal.Notify(server.quit, os.Interrupt)
 
+	server.RegisterHttpHandler()
+
+	server.tick = time.NewTicker(ManagerServerTickTimeout)
+	server.ctx, server.cancel = context.WithCancel(context.Background())
+
+	cli, err := clientv3.New(clientv3.Config{
+					Endpoints:   cfg.EtcdAddr[:],
+					DialTimeout: time.Second * 1,
+				})
+	if err != nil {
+		server.logger.Println("Create etcdclientv3 error:", err)
+	}
+	server.etcdcli = cli
+	server.kvcli = clientv3.NewKV(server.etcdcli)
+
+	server.elecCtx = &McachedContext {
+		IsCampaign 	: false,
+		Isleader 	: false,
+		Leader		: "",
+	}
+
+	server.electc = make(chan *concurrency.Election, 2)
+	els, err := concurrency.NewSession(server.etcdcli, 
+						concurrency.WithTTL(LeaderSessionLeaseTTL),
+						concurrency.WithContext(server.ctx))
+	if err != nil {
+		server.logger.Println("NewSession error:", err)
+		return false
+	}
+	server.session = els
+	server.election = concurrency.NewElection(server.session, ManagerMasterPrefix)
+	server.elecerr = make(chan error, 2)
+	server.elecerrcount = 0
+
+	server.httpredirect = 0
+
+	server.SetSlotsGroupidChecked(false)
+	server.SlotsInfo = make(map[uint64]*SlotItem)
+	server.SlotsIdlist = make([]uint64, 0)
+	server.CacheGroupInfo = make(map[uint64]*CacheGroupItem)
+	server.CacheGroupIdList = make([]uint64, 0)
+	server.updateSlotsCaches = time.NewTicker(UpdateSlotsCacheGroupDela)
+	server.InitSlotsInfo()
+	return true;
+}
+
+func (server *McachedManagerServer) RegisterHttpHandler() {
 	mux := http.NewServeMux()
 	sh := &SlotsHandler {
 		mserver : server,
@@ -173,47 +187,6 @@ func (server *McachedManagerServer) Init(cfg *Mconf) bool {
 		WriteTimeout : time.Second * 2,
 		Handler : mux,
 	}
-
-	server.tick = time.NewTicker(ManagerServerTickTimeout)
-	server.ctx, server.cancel = context.WithCancel(context.Background())
-
-	cli, err := clientv3.New(clientv3.Config{
-					Endpoints:   cfg.EtcdAddr[:],
-					DialTimeout: time.Second * 1,
-				})
-	if err != nil {
-		server.FatalLogger("Create etcdclientv3 error:", err)
-	}
-	server.etcdcli = cli
-	server.kvcli = clientv3.NewKV(server.etcdcli)
-
-
-	server.elecCtx = &McachedContext {
-		IsCampaign 	: false,
-		Isleader 	: false,
-		Leader		: "",
-	}
-
-	server.electc = make(chan *concurrency.Election, 2)
-	els, err := concurrency.NewSession(server.etcdcli, 
-						concurrency.WithTTL(LeaderSessionLeaseTTL),
-						concurrency.WithContext(server.ctx))
-	if err != nil {
-		server.ErrorLogger("NewSession error:", err)
-		return false
-	}
-	server.session = els
-	server.election = concurrency.NewElection(server.session, ManagerMasterPrefix)
-	server.elecerr = make(chan error, 2)
-	server.elecerrcount = 0
-
-	server.httpredirect = 0
-
-	server.SetSlotsGroupidChecked(false)
-	server.CacheGroupInfo = make(map[uint64]*CacheGroupItem)
-	server.updateSlotsCaches = time.NewTicker(UpdateSlotsCacheGroupDela)
-	server.InitSlotsInfo()
-	return true;
 }
 
 func (server *McachedManagerServer) AddRedirectCount() {
@@ -229,11 +202,11 @@ func (server *McachedManagerServer) GetRedirectCount() uint64 {
 }
 
 func (server *McachedManagerServer) Run() {
-	server.InfoLogger("McachedManager server running!")
+	server.logger.Println("McachedManager server running!")
 	go func() {
 		<-server.quit
 		if err := server.httpserver.Close(); err != nil {
-			server.FatalLogger("Close server:", err)
+			server.logger.Println("Close server:", err)
 		}
 		server.cancel()
 	}()
@@ -243,15 +216,6 @@ func (server *McachedManagerServer) Run() {
 			select {
 			case <-server.updateSlotsCaches.C:
 				server.DoUpdateSlotsCache()
-			case <-server.ctx.Done():
-				return;
-			}
-		}
-	}()
-
-	go func() {
-		for {
-			select {
 			case <-server.tick.C:
 				server.Tick()
 			case <-server.electc:
@@ -267,64 +231,70 @@ func (server *McachedManagerServer) Run() {
 	err := server.httpserver.ListenAndServe()
 	if err != nil {
 		if err == http.ErrServerClosed {
-			server.ErrorLogger("Server closed under request")
+			server.logger.Println("Server closed under request")
 		} else {
-			server.ErrorLogger("Server closed unexpected", err)
+			server.logger.Println("Server closed unexpected", err)
 		}
 	}
-	server.InfoLogger("Manager Server exited!")
+	server.logger.Println("Manager Server exited!")
 }
 
 
 
 func (server *McachedManagerServer) DoUpdateSlotsCache() {
-	server.InfoLogger("DoUpdateSlotsCache")
+	server.logger.Println("DoUpdateSlotsCache")
 	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer cancel()
 	slot_succ := true
 	group_succ := true
 	// update Slot
 	slot_resp, err := server.etcdcli.Get(ctx, SlotsPrefix, clientv3.WithPrefix())
-	slot_item_array := make([]*SlotItem, 0, McachedSlotsEnd - McachedSlotsStart)
+	slot_item_map := make(map[uint64]*SlotItem)
+	slot_index_list := make([]uint64, 0)
 	if err != nil {
-		server.ErrorLogger("Update slot items failed! error[", err, "]")
+		server.logger.Println("Update slot items failed! error[", err, "]")
 		slot_succ = false
 	} else {
 		for _, KV := range slot_resp.Kvs {
 			var item SlotItem
 			if err := json.Unmarshal(KV.Value, &item); err != nil {
-				server.FatalLogger("Unmarshal slot item : ", err)
+				server.logger.Println("Unmarshal slot item : ", err)
 			}
-			slot_item_array = append(slot_item_array, &item)
+			slot_item_map[item.Index] = &item
+			slot_index_list = append(slot_index_list, item.Index) 
 		}
 	}
 
 	// update CacheGroup
 	group_map := make(map[uint64]*CacheGroupItem)
 	group_resp, err := server.etcdcli.Get(ctx, CachedGroupPrefix, clientv3.WithPrefix())
+	group_id_list := make([]uint64, 0)
 	if err != nil {
-		server.ErrorLogger("Update cache group failed! error[", err, "]")
+		server.logger.Println("Update cache group failed! error[", err, "]")
 		group_succ = false
 	} else {
 		for _, KV := range group_resp.Kvs {
 			var item CacheGroupItem
 			if err := json.Unmarshal(KV.Value, &item); err != nil {
-				server.FatalLogger("Unmarshal slot item : ", err)
+				server.logger.Println("Unmarshal slot item : ", err)
 			}
 			group_map[item.GroupId] = &item
+			group_id_list = append(group_id_list, item.GroupId)
 		}
 	}
 
 	server.slots_group_mutex.Lock()
 	defer server.slots_group_mutex.Unlock()
 	if slot_succ {
-		server.InfoLogger("DoUpdateSlotsCache update slot:", len(slot_item_array))
-		server.SlotsInfo = slot_item_array
+		server.logger.Println("DoUpdateSlotsCache update slot:", len(slot_item_map))
+		server.SlotsInfo = slot_item_map
+		server.SlotsIdlist = slot_index_list
 	}
-	
+
 	if group_succ {
-		server.InfoLogger("DoUpdateSlotsCache update group:", len(group_map))
+		server.logger.Println("DoUpdateSlotsCache update group:", len(group_map))
 		server.CacheGroupInfo = group_map
+		server.CacheGroupIdList = group_id_list
 	}
 }
 
@@ -334,7 +304,7 @@ func (server *McachedManagerServer) Tick () {
 		if err == concurrency.ErrElectionNoLeader {
 			server.Campaign()
 		} else {
-			server.ErrorLogger("Get leader error:", err)
+			server.logger.Println("Get leader error:", err)
 		}
 	} else {
 		// maybe start later, the leader is exist! should update campaign!
@@ -355,18 +325,18 @@ func (server *McachedManagerServer) MaybeLeader() {
 	server.elecCtx.IsCampaign = false
 	leader, err := server.election.Leader(server.ctx)
 	if err != nil {
-		server.ErrorLogger("Electtion get Leader error:", err)
+		server.logger.Println("Electtion get Leader error:", err)
 		return
 	}
 
 	if string(leader.Kvs[0].Value) == "" {
-		server.FatalLogger("Leader msg is empty!")
+		server.logger.Println("Leader msg is empty!")
 	}
 
 	server.elecCtx.Isleader = bool(string(leader.Kvs[0].Value) == server.cfg.LocalAddr)
 	server.elecCtx.Leader = string(leader.Kvs[0].Value)
 
-	server.InfoLogger("Leader:", server.elecCtx.Leader)
+	server.logger.Println("Leader:", server.elecCtx.Leader)
 
 	if server.elecCtx.Isleader && !server.HasCheckSlotGroupid() {
 		b1, _ := server.MaybeInitSlots()
@@ -383,7 +353,7 @@ func (server *McachedManagerServer) MaybeUpdateElectCtx(iscam, isleader bool, le
 	defer server.elecCtx.Mutex.Unlock()
 
 	if server.elecCtx.IsCampaign {
-		server.InfoLogger("IsCampaign:^_^")
+		server.logger.Println("IsCampaign:^_^")
 		return
 	}
 
@@ -408,7 +378,7 @@ func (server *McachedManagerServer) Campaign() {
 		ctx, cancel := context.WithTimeout(context.Background(), EtcdGetRequestTimeout)
 		defer cancel()
 		if err := server.election.Campaign(ctx, server.cfg.LocalAddr); err != nil {
-			server.ErrorLogger("Election Campaign error:", err)
+			server.logger.Println("Election Campaign error:", err)
 			server.elecerr <- err
 		}
 		server.electc <- server.election
@@ -443,17 +413,17 @@ func (server *McachedManagerServer) CheckGroupidIsBuild() (bool, error) {
 	defer cancel()
 	res, err := server.etcdcli.Get(ctx, GroupIdPrefix, clientv3.WithCountOnly(), clientv3.WithPrefix())
 	if err != nil {
-		server.FatalLogger("Checkout GroupId error:", err)
+		server.logger.Println("Checkout GroupId error:", err)
 		return false, err
 	}
-	server.InfoLogger("Groupid count:", res.Count)
+	server.logger.Println("Groupid count:", res.Count)
 	return res.Count >= 1, nil
 }
 
 func (server *McachedManagerServer) MaybeUpdateMaxGroupid(id int64) (bool, error) {
 	init, err := server.CheckGroupidIsBuild()
 	if err != nil {
-		server.FatalLogger("CheckGroupidIsBuild error:", err)
+		server.logger.Println("CheckGroupidIsBuild error:", err)
 	}
 	if init {
 		return true, nil
@@ -464,7 +434,7 @@ func (server *McachedManagerServer) MaybeUpdateMaxGroupid(id int64) (bool, error
 	val := fmt.Sprintf("%d", id)
 	_, err = server.etcdcli.Put(ctx, GroupIdPrefix + "MaxGroupid", val)
 	if err != nil {
-		server.ErrorLogger("Create MaxGroupid error:", err)
+		server.logger.Println("Create MaxGroupid error:", err)
 		return false, err
 	}
 	return true, nil
@@ -473,7 +443,7 @@ func (server *McachedManagerServer) MaybeUpdateMaxGroupid(id int64) (bool, error
 func (server *McachedManagerServer) MaybeUpdateGroupCount(count int64) (bool, error) {
 	init, err := server.CheckGroupidIsBuild()
 	if err != nil {
-		server.FatalLogger("CheckGroupidIsBuild error:", err)
+		server.logger.Println("CheckGroupidIsBuild error:", err)
 	}
 	if init {
 		return true, nil
@@ -484,7 +454,7 @@ func (server *McachedManagerServer) MaybeUpdateGroupCount(count int64) (bool, er
 	val := fmt.Sprintf("%d", count)
 	_, err = server.etcdcli.Put(ctx, CachedGroupPrefix + "GroupCount", val)
 	if err != nil {
-		server.ErrorLogger("Create MaxGroupid error:", err)
+		server.logger.Println("Create MaxGroupid error:", err)
 		return false, err
 	}
 	return true, nil
@@ -495,17 +465,17 @@ func (server *McachedManagerServer) CheckSlotIsBuild() (bool, error) {
 	defer cancel()
 	res, err := server.etcdcli.Get(ctx, SlotsPrefix, clientv3.WithCountOnly(), clientv3.WithPrefix())
 	if err != nil {
-		server.FatalLogger("Checkout Slots error:", err)
+		server.logger.Println("Checkout Slots error:", err)
 		return false, err
 	}
-	server.InfoLogger("Slots count:", res.Count)
+	server.logger.Println("Slots count:", res.Count)
 	return res.Count >= McachedSlotsEnd - McachedSlotsStart, nil
 }
 
 func (server *McachedManagerServer) MaybeInitSlots() (bool, error) {
 	init, err := server.CheckSlotIsBuild()
 	if err != nil {
-		server.FatalLogger("CheckSlotIsBuild error:", err)
+		server.logger.Println("CheckSlotIsBuild error:", err)
 	}
 	if init {
 		return true, nil
@@ -521,7 +491,7 @@ func (server *McachedManagerServer) MaybeInitSlots() (bool, error) {
 
 func (server *McachedManagerServer) CreateSlot(index int) (bool, error) {
 	if index < 0 {
-		server.FatalLogger("Create negative slot!")
+		server.logger.Println("Create negative slot!")
 	}
 	slot := &SlotItem {
 		Index : uint64(index),
@@ -541,20 +511,20 @@ func (server *McachedManagerServer) CreateSlotItem (slot *SlotItem) (bool, error
 	ctx, cancel := context.WithTimeout(context.Background(), EtcdGetRequestTimeout)
 	defer cancel()
 	if (slot.Index == 0) {
-		server.FatalLogger("Slot Index is zero!")
+		server.logger.Println("Slot Index is zero!")
 	}
 
 	key_prefix := server.GetSlotsIndexKey(slot.Index)
 	slot_byte, err := json.Marshal(slot)
 	if err != nil {
-		server.ErrorLogger("Json Marshal slot item error:", err)
+		server.logger.Println("Json Marshal slot item error:", err)
 		return false, err
 	}
 	
 	_, err = server.etcdcli.Put(ctx, key_prefix, string(slot_byte))
 
 	if err != nil {
-		server.ErrorLogger("Create slot item unsucceed!")
+		server.logger.Println("Create slot item unsucceed!")
 		return false, err
 	}
 
@@ -570,36 +540,67 @@ func (server *McachedManagerServer) CreateCachedGroup (group *CacheGroupItem) (b
 	ctx, cancel := context.WithTimeout(context.Background(), EtcdGetRequestTimeout)
 	defer cancel()
 	if (group.GroupId == 0) {
-		server.FatalLogger("Slot Index is zero!")
+		server.logger.Println("Slot Index is zero!")
 	}
 
 	key_prefix := server.GetCacheGroupIdKey(group.GroupId)
 	group_byte, err := json.Marshal(group)
 	if err != nil {
-		server.ErrorLogger("Json Marshal group item error:", err)
+		server.logger.Println("Json Marshal group item error:", err)
 		return false, err
 	}
 	
 	_, err = server.etcdcli.Put(ctx, key_prefix, string(group_byte))
 
 	if err != nil {
-		server.ErrorLogger("Create group item unsucceed!")
+		server.logger.Println("Create group item unsucceed!")
 		return false, err
 	}
 
 	return true, nil
 }
 
+func (server *McachedManagerServer) GetSlotsNum() uint64 {
+	server.slots_group_mutex.Lock()
+	defer server.slots_group_mutex.Unlock()
+	return uint64(len(server.SlotsIdlist))
+}
+
+func (server *McachedManagerServer) GetNthSlotsIndex(Nth uint64) uint64 {
+	server.slots_group_mutex.Lock()
+	defer server.slots_group_mutex.Unlock()
+	if (Nth < uint64(len(server.SlotsIdlist))) {
+		return server.SlotsIdlist[Nth]
+	}
+	return 0
+}
+
+func (server *McachedManagerServer) GetGroupsNum() uint64 {
+	server.slots_group_mutex.Lock()
+	defer server.slots_group_mutex.Unlock()
+	return uint64(len(server.CacheGroupIdList))
+}
+
+func (server *McachedManagerServer) GetNthGroupid(Nth uint64) uint64 {
+	server.slots_group_mutex.Lock()
+	defer server.slots_group_mutex.Unlock()
+	if (Nth < uint64(len(server.CacheGroupIdList))) {
+		return server.CacheGroupIdList[Nth]
+	}
+	return 0
+}
+
 func (server *McachedManagerServer) InitSlotsInfo() {
 	for i := uint64(McachedSlotsStart); i < McachedSlotsEnd; i++ {
-		item := SlotItem {
+		item := &SlotItem {
 			Index :	i,
 			TotalSize : 0,
 			Groupid : 0,
 			IsAdjust : false,
 			DstGroupid : 0,
 		}
-		server.SlotsInfo = append(server.SlotsInfo, &item)
+		server.SlotsInfo[i] = item
+		server.SlotsIdlist = append(server.SlotsIdlist, i)
 	}
 }
 
@@ -633,26 +634,69 @@ func Min(left, right uint64) uint64 {
 	return right
 }
 
-func (server *McachedManagerServer) GetSlotsInfo(start, end uint64) (* SlotsResponseInfo, error) {
+func (server *McachedManagerServer) GetSlotsInfo(start, size uint64) (* SlotsResponseInfo, error) {
 	server.slots_group_mutex.Lock()
 	defer server.slots_group_mutex.Unlock()
 
-	if start > end {
-		return nil, errors.New("start index of slot less than end index")
-	}
-
 	start = Max(start, McachedSlotsStart)
-	end = Min(end, McachedSlotsEnd)
+	end := Min(start + size, McachedSlotsEnd)
 
 	infos := &SlotsResponseInfo {
+		Succeed : false,
 		SlotNum : 0,
-		Items 	: make([]SlotInfo, 0, end - start),
+		SlotTotal : 0,
+		Items 	: make([]SlotInfo, 0),
 	}
 
 	for i := start; i < end; i++ {
 		infos.SlotNum++
-		infos.Items = append(infos.Items, server.BuildSlotInfo(i))
+		th := server.SlotsIdlist[i]
+		infos.Items = append(infos.Items, server.BuildSlotInfo(th))
 	}
+	infos.SlotTotal = uint64(len(server.SlotsIdlist))
+	infos.Succeed = true
+
+	return infos, nil
+}
+
+func (server *McachedManagerServer) BuildCacheGroupItem(group uint64) CacheGroupItem {
+	if val, ok := server.CacheGroupInfo[group]; ok {
+		return *val
+	} else {
+		server.logger.Panicln("Find key failed!")
+	}
+	ret := CacheGroupItem {
+		GroupId : group,
+		Hosts : CacheAddr{
+			Master : "",
+			Slaves : make([]string, 0),
+		},
+		SlotsIndex : make([]uint64, 0),
+	}
+	return ret
+}
+
+func (server *McachedManagerServer) GetCacheGroupInfo(start, size uint64) (* CacheGroupResponseInfo, error) {
+	server.slots_group_mutex.Lock()
+	defer server.slots_group_mutex.Unlock()
+
+	start = Max(start, McachedSlotsStart)
+	end := Min(start + size, uint64(len(server.CacheGroupIdList)))
+
+	infos := &CacheGroupResponseInfo {
+		Succeed : false,
+		GroupNum : 0,
+		GroupTotal : 0,
+		Items 	: make([]CacheGroupItem, 0),
+	}
+
+	for i := start; i < end; i++ {
+		infos.GroupNum++
+		th := server.CacheGroupIdList[i]
+		infos.Items = append(infos.Items, server.BuildCacheGroupItem(th))
+	}
+	infos.GroupTotal = uint64(len(server.CacheGroupIdList))
+	infos.Succeed = true
 
 	return infos, nil
 }

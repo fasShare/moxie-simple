@@ -2,7 +2,7 @@ package Mcached
 
 import (
 	"net/http"
-	//"io/ioutil"
+	"io/ioutil"
 	"encoding/json"
 	"go.etcd.io/etcd/clientv3/concurrency"
 )
@@ -13,8 +13,8 @@ const (
 
 type SlotsRequest struct {
 	Version						int16 `json:"version"`
-	StartIndex 					uint64 `json:"slot_start"`
-	EndIndex					uint64 `json:"slot_end"`
+	PageIndex 					uint64 `json:"page_index"`
+	PageSize					uint64 `json:"page_size"`
 }
 
 type SlotItem struct {
@@ -23,12 +23,6 @@ type SlotItem struct {
 	Groupid 					uint64 `json:"group_id"`
 	IsAdjust 					bool   `json:"is_adjust"`
 	DstGroupid 					uint64 `json:"dst_froup_id"`
-}
-
-type CacheGroupItem struct {
-	GroupId						uint64	    `json:"group_id"`
-	Hosts						CacheAddr   `json:"cached_hosts"`
-	SlotsIndex					[]uint64	`json:"slots"`
 }
 
 type CacheAddr struct {
@@ -42,8 +36,29 @@ type SlotInfo struct {
 }
 
 type SlotsResponseInfo struct {
-	SlotNum						int64 		`json:"slot_num"`
+	Succeed						bool 		`json:"succeed"`
+	SlotNum						uint64 		`json:"slot_num"`
+	SlotTotal					uint64		`json:"total_num"`
 	Items						[]SlotInfo	`json:"slot_items"`
+}
+
+type CacheGroupRequest struct {
+	Version						int16 `json:"version"`
+	PageIndex 					uint64 `json:"page_index"`
+	PageSize					uint64 `json:"page_size"`
+}
+
+type CacheGroupItem struct {
+	GroupId						uint64	    `json:"group_id"`
+	Hosts						CacheAddr   `json:"cached_hosts"`
+	SlotsIndex					[]uint64	`json:"slots"`
+}
+
+type CacheGroupResponseInfo struct {
+	Succeed						bool 		     `json:"succeed"`
+	GroupNum					uint64 		     `json:"group_num"`
+	GroupTotal					uint64		     `json:"total_num"`
+	Items						[]CacheGroupItem `json:"group_items"`
 }
 
 func GetRedirectRequestUrl(request *http.Request, redirect_host string) string {
@@ -62,11 +77,11 @@ func (ser *IndexHandler) ServeHTTP(response http.ResponseWriter, request *http.R
 	if err != nil{
 		if err == concurrency.ErrElectionNoLeader {
 			// Service Unavailable
-			ser.mserver.ErrorLogger("Service Unavailable")
+			ser.mserver.logger.Println("Service Unavailable")
 			response.WriteHeader(503)
 		} else {
 			// Internal Server Error
-			ser.mserver.ErrorLogger("Internal Server Error")
+			ser.mserver.logger.Println("Internal Server Error")
 			response.WriteHeader(500)
 		}
 		return
@@ -74,11 +89,11 @@ func (ser *IndexHandler) ServeHTTP(response http.ResponseWriter, request *http.R
 	
 	if isleader == false {
 		if leader == "" {
-			ser.mserver.ErrorLogger("Internal Server Error leader status!")
+			ser.mserver.logger.Println("Internal Server Error leader status!")
 			response.WriteHeader(500)
 		} else {
 			ser.mserver.AddRedirectCount()
-			ser.mserver.ErrorLogger("Request was redireted!")
+			ser.mserver.logger.Println("Request was redireted!")
 			http.Redirect(response, request, GetRedirectRequestUrl(request, leader), 307)
 		}
 		return
@@ -95,11 +110,11 @@ func (ser *SlotsHandler) ServeHTTP(response http.ResponseWriter, request *http.R
 	if err != nil{
 		if err == concurrency.ErrElectionNoLeader {
 			// Service Unavailable
-			ser.mserver.ErrorLogger("Service Unavailable")
+			ser.mserver.logger.Println("Service Unavailable")
 			response.WriteHeader(503)
 		} else {
 			// Internal Server Error
-			ser.mserver.ErrorLogger("Internal Server Error")
+			ser.mserver.logger.Println("Internal Server Error")
 			response.WriteHeader(500)
 		}
 		return
@@ -107,28 +122,51 @@ func (ser *SlotsHandler) ServeHTTP(response http.ResponseWriter, request *http.R
 	
 	if isleader == false {
 		if leader == "" {
-			ser.mserver.ErrorLogger("Internal Server Error leader status!")
+			ser.mserver.logger.Println("Internal Server Error leader status!")
 			response.WriteHeader(500)
 		} else {
 			ser.mserver.AddRedirectCount()
-			ser.mserver.ErrorLogger("Request was redireted!")
+			ser.mserver.logger.Println("Request was redireted!")
 			http.Redirect(response, request, GetRedirectRequestUrl(request, leader), 307)
 		}
 		return
 	}
-/*
+
+	emptyres := &SlotsResponseInfo {
+		Succeed : false,
+		SlotNum : 0,
+		SlotTotal : 0,
+		Items   : make([]SlotInfo, 0),
+	}
+
 	sq := &SlotsRequest {}
 	body, _ := ioutil.ReadAll(request.Body)
-	json.Unmarshal(body, sq)
-	slotsinfo, err := ser.mserver.GetSlotsInfo(sq.StartIndex, sq.EndIndex)
-*/
-	slotsinfo, err := ser.mserver.GetSlotsInfo(0, 10)
-	res, err := json.Marshal(slotsinfo)
-	if err != nil {
+	if err := json.Unmarshal(body, sq); err != nil {
 		response.WriteHeader(500)
+		if error_res, err := json.Marshal(emptyres); err == nil {
+			response.Write(error_res)
+		}
 		return
 	}
-	response.Write(res)
+
+	ser.mserver.logger.Println("PageIndex:", sq.PageIndex, " PageSize:", sq.PageSize)
+
+	if (sq.PageIndex < 1) {
+		sq.PageIndex = 1
+	}
+	start_index := sq.PageSize * (sq.PageIndex - 1) + 1
+
+	slotsinfo, err := ser.mserver.GetSlotsInfo(start_index, sq.PageSize)
+	slotsinfo.Succeed = true
+	httpres, err := json.Marshal(slotsinfo)
+	if err != nil {
+		response.WriteHeader(500)
+		if error_res, err := json.Marshal(emptyres); err == nil {
+			response.Write(error_res)
+		}
+		return
+	}
+	response.Write(httpres)
 }
 
 type CachedGroupHandler struct {
@@ -140,11 +178,11 @@ func (ser *CachedGroupHandler) ServeHTTP(response http.ResponseWriter, request *
 	if err != nil{
 		if err == concurrency.ErrElectionNoLeader {
 			// Service Unavailable
-			ser.mserver.ErrorLogger("Service Unavailable")
+			ser.mserver.logger.Println("Service Unavailable")
 			response.WriteHeader(503)
 		} else {
 			// Internal Server Error
-			ser.mserver.ErrorLogger("Internal Server Error")
+			ser.mserver.logger.Println("Internal Server Error")
 			response.WriteHeader(500)
 		}
 		return
@@ -152,14 +190,47 @@ func (ser *CachedGroupHandler) ServeHTTP(response http.ResponseWriter, request *
 	
 	if isleader == false {
 		if leader == "" {
-			ser.mserver.ErrorLogger("Internal Server Error leader status!")
+			ser.mserver.logger.Println("Internal Server Error leader status!")
 			response.WriteHeader(500)
 		} else {
 			ser.mserver.AddRedirectCount()
-			ser.mserver.ErrorLogger("Request was redireted!")
+			ser.mserver.logger.Println("Request was redireted!")
 			http.Redirect(response, request, GetRedirectRequestUrl(request, leader), 307)
 		}
 		return
 	}
-	response.Write([]byte(GetRedirectRequestUrl(request, leader)))
+	
+
+	emptyres := &CacheGroupResponseInfo {
+		Succeed : false,
+		GroupNum : 0,
+		GroupTotal : 0,
+		Items   : make([]CacheGroupItem, 0),
+	}
+
+	sq := &CacheGroupRequest {}
+	body, _ := ioutil.ReadAll(request.Body)
+	if err := json.Unmarshal(body, sq); err != nil {
+		response.WriteHeader(500)
+		if error_res, err := json.Marshal(emptyres); err == nil {
+			response.Write(error_res)
+		}
+		return
+	}
+	if (sq.PageIndex < 1) {
+		sq.PageIndex = 1
+	}
+	start_index := sq.PageSize * (sq.PageIndex - 1) + 1
+
+	groupsinfo, err := ser.mserver.GetCacheGroupInfo(start_index, sq.PageSize)
+	groupsinfo.Succeed = true
+	httpres, err := json.Marshal(groupsinfo)
+	if err != nil {
+		response.WriteHeader(500)
+		if error_res, err := json.Marshal(emptyres); err == nil {
+			response.Write(error_res)
+		}
+		return
+	}
+	response.Write(httpres)
 }
