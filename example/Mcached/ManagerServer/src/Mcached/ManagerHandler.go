@@ -721,8 +721,8 @@ func (server *ManagerServer) MoveSlotToGroup (slotid, srcid, destid uint64) (boo
 		return false, errors.New("Unmarshal slot value is error!")
 	}
 
-	if slot.IsAdjust {
-		return false, errors.New("Slot is moving!")
+	if !slot.IsAdjust {
+		return false, errors.New("Slot is not moving!")
 	}
 
 	groupkv := tres.Responses[1].GetResponseRange().Kvs[0]
@@ -735,6 +735,14 @@ func (server *ManagerServer) MoveSlotToGroup (slotid, srcid, destid uint64) (boo
 	var destgroup SlotGroup.CacheGroupItem
 	if json.Unmarshal(destgroupkv.Value, &destgroup) != nil {
 		return false, errors.New("Unmarshal group value is error!")
+	}
+
+	if slot.Groupid != group.GroupId {
+		return false, errors.New("The slot source groupid is incorrect!")
+	}
+
+	if slot.DstGroupid != destgroup.GroupId {
+		return false, errors.New("The slot dest groupid is incorrect!")
 	}
 
 	if ret, err := SlotGroup.DeleteSlotFromGroup(&slot, &group); err != nil {
@@ -776,6 +784,84 @@ func (server *ManagerServer) MoveSlotToGroup (slotid, srcid, destid uint64) (boo
 	if !ctres.Succeeded {
 		server.logger.Println("MoveSlotToGroup Commit Unsucceed:", err)
 		return false, errors.New("MoveSlotToGroup Commit Unsucceed")
+	}
+
+	return true, nil
+}
+
+func (server *ManagerServer) StartMoveSlotToGroup (slotid, srcid, destid uint64) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), EtcdGetRequestTimeout)
+	defer cancel()
+	if (srcid == 0 || destid == 0 || slotid == 0) {
+		server.logger.Panicln("Group id or slot id is zero!")
+	}
+
+	slot_key := server.GetSlotsIndexKey(slotid)
+	src_group_key := server.GetCacheGroupIdKey(srcid)
+	dest_group_key := server.GetCacheGroupIdKey(destid)
+
+	txn := server.EtcdClientv3.Txn(ctx)
+	txn.If(clientv3.Compare(clientv3.CreateRevision(src_group_key), ">", 0),
+			clientv3.Compare(clientv3.CreateRevision(dest_group_key), ">", 0))
+	txn.Then(clientv3.OpGet(slot_key), clientv3.OpGet(src_group_key), clientv3.OpGet(dest_group_key))
+	tres, err := txn.Commit()
+	if !tres.Succeeded {
+		return false, errors.New("Get slot and groups failed!")
+	}
+
+	for i := 0; i < len(tres.Responses); i++ {
+		for j := 0; j < len(tres.Responses[i].GetResponseRange().Kvs); j++ {
+			item := tres.Responses[i].GetResponseRange().Kvs[j]
+			fmt.Printf("key[%d][%d]:%s->%s\n", i, j, item.Key, item.Value)
+		}
+	}
+
+	slotkv := tres.Responses[0].GetResponseRange().Kvs[0]
+	var slot SlotGroup.SlotItem
+	if json.Unmarshal(slotkv.Value, &slot) != nil {
+		return false, errors.New("Unmarshal slot value is error!")
+	}
+
+	if slot.IsAdjust {
+		return false, errors.New("Slot is moving!")
+	}
+
+	groupkv := tres.Responses[1].GetResponseRange().Kvs[0]
+	var group SlotGroup.CacheGroupItem
+	if json.Unmarshal(groupkv.Value, &group) != nil {
+		return false, errors.New("Unmarshal group value is error!")
+	}
+
+	destgroupkv := tres.Responses[2].GetResponseRange().Kvs[0]
+	var destgroup SlotGroup.CacheGroupItem
+	if json.Unmarshal(destgroupkv.Value, &destgroup) != nil {
+		return false, errors.New("Unmarshal group value is error!")
+	}
+
+	if ret, err := SlotGroup.SlotInGroup(&slot, &group); err != nil {
+		return ret, err
+	}
+
+	slot.IsAdjust = true
+	slot.DstGroupid = destgroup.GroupId
+
+	slot_byte, err := json.Marshal(&slot)
+	if err != nil {
+		server.logger.Panicln("Marshal slot slotid!")
+	}
+
+	ctxn := server.EtcdClientv3.Txn(ctx)
+	ctxn.If(clientv3.Compare(clientv3.ModRevision(slot_key) , "=", slotkv.ModRevision))
+	ctxn.Then(clientv3.OpPut(slot_key, string(slot_byte)))
+	ctres, err := ctxn.Commit()
+	if err != nil {
+		server.logger.Println("StartMoveSlotToGroup Commit error:", err)
+		return false, err
+	}
+
+	if !ctres.Succeeded {
+		server.logger.Println("StartMoveSlotToGroup Commit Unsucceed:", err)
+		return false, errors.New("StartMoveSlotToGroup Commit Unsucceed")
 	}
 
 	return true, nil

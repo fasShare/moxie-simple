@@ -15,6 +15,7 @@ const (
 	CmdAddSlot					= 	2
 	CmdMoveSlot					= 	3
 	CmdDelSlot					= 	4
+	CmdSlotStartMove			= 	5
 )
 
 type GroupReviseHandler struct {
@@ -93,6 +94,8 @@ func (handler *GroupReviseHandler) ServeHTTP(response http.ResponseWriter, reque
 		handler.HandleDelSlot(grr, Httpres)
 	case CmdMoveSlot:
 		handler.HandleMoveSlot(grr, Httpres)
+	case CmdSlotStartMove:
+		handler.HandleSlotStartMove(grr, Httpres)
 	default:
 		Httpres.Msg = "Cmd not found!"
 		Httpres.Succeed = false
@@ -157,6 +160,16 @@ func (handler *GroupReviseHandler) HandleAddSlot(request *GroupReviseRequest, re
 
 func (handler *GroupReviseHandler) HandleMoveSlot(request *GroupReviseRequest, response *GroupReviseResponse) {
 	if succ, err := handler.server.MoveSlotToGroup(request.SlotId, request.SourceGroupId, request.DestGroupId); err == nil {
+		response.Succeed = succ
+		response.Msg = "ok"
+	} else {
+		response.Succeed = succ
+		response.Msg = err.Error()
+	}
+}
+
+func (handler *GroupReviseHandler) HandleSlotStartMove(request *GroupReviseRequest, response *GroupReviseResponse) {
+	if succ, err := handler.server.StartMoveSlotToGroup(request.SlotId, request.SourceGroupId, request.DestGroupId); err == nil {
 		response.Succeed = succ
 		response.Msg = "ok"
 	} else {
