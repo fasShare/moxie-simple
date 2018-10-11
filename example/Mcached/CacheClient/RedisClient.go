@@ -1,10 +1,10 @@
-package main;
+package main
 
 import (
-	"github.com/gomodule/redigo/redis"
-	"fmt"
-	"strconv"
 	"flag"
+	"fmt"
+	"github.com/gomodule/redigo/redis"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -17,7 +17,7 @@ func GetStringInSize(size uint, char string) (string, error) {
 	return ret[:size], nil
 }
 
-func main () {
+func main() {
 	routinenum := flag.Int("rn", 4, "Go routine Num!")
 	addr := flag.String("ip", "127.0.0.1:6379", "The address of redis server!")
 	keylen := flag.Uint("keylen", 30, "The default length of key!")
@@ -27,10 +27,10 @@ func main () {
 
 	if *routinenum <= 0 || *reqs <= 0 {
 		fmt.Println("Args Error!")
-		return 
+		return
 	}
 
-	//fmt.Printf("rn = %d, addr = %s, keylen = %d, datalen = %d, reqs = %d\n", *routinenum, *addr, *keylen, *datalen, *reqs)
+	fmt.Printf("rn = %d, ip = %s, keylen = %d, datalen = %d, reqs = %d\n", *routinenum, *addr, *keylen, *datalen, *reqs)
 
 	var wg sync.WaitGroup
 	wg.Add(*routinenum)
@@ -40,7 +40,7 @@ func main () {
 	var total_misshits uint64 = 0
 	start_time := time.Now()
 	for i := 0; i < *routinenum; i++ {
-		go func (id int, addr string, kenlen, datalen uint, reqs int) {
+		go func(id int, addr string, kenlen, datalen uint, reqs int) {
 			redisclient, err := redis.Dial("tcp", addr)
 			if err != nil {
 				wg.Add(-1)
@@ -75,8 +75,11 @@ func main () {
 			print_mutex.Lock()
 			total_reqs += uint64(rq)
 			total_misshits += uint64(misshits)
+			if misshits != 0 {
+				fmt.Printf("In goroutine:%d, reqs=%d, misshits=%d\n", id, rq, misshits)
+			}
 			print_mutex.Unlock()
-		} (i, *addr, *keylen, *datalen, *reqs)
+		}(i, *addr, *keylen, *datalen, *reqs)
 	}
 
 	wg.Wait()

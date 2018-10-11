@@ -1,8 +1,6 @@
 package Mcached
 
 import (
-	"SlotGroup"
-
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -110,9 +108,9 @@ func (handler *GroupReviseHandler) ServeHTTP(response http.ResponseWriter, reque
 }
 
 func (handler *GroupReviseHandler) HandleCreateCacheGroup(request *GroupReviseRequest, response *GroupReviseResponse) {
-	Item := &SlotGroup.CacheGroupItem {
+	Item := &CacheGroupItem {
 		GroupId	: 0,
-		Hosts	: SlotGroup.CacheAddr {
+		Hosts	: CacheAddr {
 			Master : "",
 			Slaves : make([]string, 0),
 		},

@@ -1,7 +1,6 @@
 package Mcached;
 
 import (
-	"SlotGroup"
 	"encoding/json"
 	"os"
 	"os/signal"
@@ -17,24 +16,8 @@ import (
 )
 
 const (
-	SlotsPrefix						= "/Mcached/Slots/"
-	CachedGroupPrefix				= "/Mcached/CachedGroup/"
-	GroupIdPrefix					= "/Mcached/GroupId/"
 	MaxGroupIdKey					= "/Mcached/GroupId/MaxGroupId"		
-	ManagerMasterPrefix				= "/Mcached/ManagerMaster/"
 	GroupRevisePrefix				= "/Mcached/GroupRevise/"
-)
-
-const (
-	HtmlPath						= "../index/"
-	IndexFileName					= "../index/index.html"
-)
-
-const (
-	SlotTotalSize					= "total_size"
-	SlotOfGroupid					= "slot_group_id"
-	SlotIsAdjust					= "is_move"
-	SlotDstGroupid					= "slot_dst_group_id"
 )
 
 const (
@@ -42,10 +25,6 @@ const (
 	EtcdGetRequestTimeout			= 5 * time.Second
 	UpdateSlotsCacheGroupDela		= 60 * time.Second
 	LeaderSessionLeaseTTL			= 1
-
-	McachedSlotsStart				= 1
-	McachedSlotsEnd					= 1025
-	CacheGroupIdStart				= 1
 )
 
 type McachedConf struct {
@@ -182,13 +161,13 @@ func (server *ManagerServer) Run() {
 		server.cancel()
 	}()
 	
-	kcfg := &SlotGroup.SGConfig {
+	kcfg := &SGConfig {
 		EtcdEndpoints : server.Mconfig.EtcdAddr,
 		HttpEndpoints : server.Mconfig.KeeperAddr,
 		Klogger       : server.logger,
 	}
 
-	keeper, err := SlotGroup.NewSlotGroupKeeper(server.ctx, kcfg)
+	keeper, err := NewSlotGroupKeeper(server.ctx, kcfg)
 	if err != nil {
 		server.logger.Panicln("NewSlotGroupKeeper failed!")
 	}
@@ -398,7 +377,7 @@ func (server *ManagerServer) CreateSlot(index int) (bool, error) {
 	if index < 0 {
 		server.logger.Println("Create negative slot!")
 	}
-	slot := &SlotGroup.SlotItem {
+	slot := &SlotItem {
 		Index : uint64(index),
 		Groupid : 0,
 		IsAdjust: false,
@@ -412,7 +391,7 @@ func (server *ManagerServer) GetSlotsIndexKey(index uint64) string {
 	return key_prefix
 }
 
-func (server *ManagerServer) CreateSlotItem (slot *SlotGroup.SlotItem) (bool, error) {
+func (server *ManagerServer) CreateSlotItem (slot *SlotItem) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), EtcdGetRequestTimeout)
 	defer cancel()
 	if (slot.Index == 0) {
@@ -457,7 +436,7 @@ func (server *ManagerServer) GetCacheGroupIdKey(id uint64) string {
 	return key_prefix
 }
 
-func (server *ManagerServer) CreateCachedGroup (group *SlotGroup.CacheGroupItem) (bool, error) {
+func (server *ManagerServer) CreateCachedGroup (group *CacheGroupItem) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), EtcdGetRequestTimeout)
 	defer cancel()
 
@@ -518,7 +497,7 @@ func (server *ManagerServer) DeleteCachedGroup (id uint64) (bool, error) {
 	if !jres.Succeeded {
 		return false, errors.New("Judge group empty failed!")
 	}
-	var cache SlotGroup.CacheGroupItem
+	var cache CacheGroupItem
 	if err := json.Unmarshal(jres.Responses[0].GetResponseRange().Kvs[0].Value, &cache); err != nil {
 		return false, err
 	}
@@ -569,7 +548,7 @@ func (server *ManagerServer) AddSlotToGroup (slotid, groupid uint64) (bool, erro
 	}
 
 	slotkv := tres.Responses[0].GetResponseRange().Kvs[0]
-	var slot SlotGroup.SlotItem
+	var slot SlotItem
 	if json.Unmarshal(slotkv.Value, &slot) != nil {
 		return false, errors.New("Unmarshal slot value is error!")
 	}
@@ -583,12 +562,12 @@ func (server *ManagerServer) AddSlotToGroup (slotid, groupid uint64) (bool, erro
 	}
 
 	groupkv := tres.Responses[1].GetResponseRange().Kvs[0]
-	var group SlotGroup.CacheGroupItem
+	var group CacheGroupItem
 	if json.Unmarshal(groupkv.Value, &group) != nil {
 		return false, errors.New("Unmarshal group value is error!")
 	}
 	
-	if ret, err := SlotGroup.AddSlotToGroup(&slot, &group); err != nil {
+	if ret, err := AddSlotToGroup(&slot, &group); err != nil {
 		return ret, err
 	}
 
@@ -640,7 +619,7 @@ func (server *ManagerServer) DeleteSlotfromGroup (slotid, groupid uint64) (bool,
 	}
 
 	slotkv := tres.Responses[0].GetResponseRange().Kvs[0]
-	var slot SlotGroup.SlotItem
+	var slot SlotItem
 	if json.Unmarshal(slotkv.Value, &slot) != nil {
 		return false, errors.New("Unmarshal slot value is error!")
 	}
@@ -650,12 +629,12 @@ func (server *ManagerServer) DeleteSlotfromGroup (slotid, groupid uint64) (bool,
 	}
 
 	groupkv := tres.Responses[1].GetResponseRange().Kvs[0]
-	var group SlotGroup.CacheGroupItem
+	var group CacheGroupItem
 	if json.Unmarshal(groupkv.Value, &group) != nil {
 		return false, errors.New("Unmarshal group value is error!")
 	}
 
-	if ret, err := SlotGroup.DeleteSlotFromGroup(&slot, &group); err != nil {
+	if ret, err := DeleteSlotFromGroup(&slot, &group); err != nil {
 		return ret, err
 	}
 
@@ -716,7 +695,7 @@ func (server *ManagerServer) MoveSlotToGroup (slotid, srcid, destid uint64) (boo
 	}
 
 	slotkv := tres.Responses[0].GetResponseRange().Kvs[0]
-	var slot SlotGroup.SlotItem
+	var slot SlotItem
 	if json.Unmarshal(slotkv.Value, &slot) != nil {
 		return false, errors.New("Unmarshal slot value is error!")
 	}
@@ -726,13 +705,13 @@ func (server *ManagerServer) MoveSlotToGroup (slotid, srcid, destid uint64) (boo
 	}
 
 	groupkv := tres.Responses[1].GetResponseRange().Kvs[0]
-	var group SlotGroup.CacheGroupItem
+	var group CacheGroupItem
 	if json.Unmarshal(groupkv.Value, &group) != nil {
 		return false, errors.New("Unmarshal group value is error!")
 	}
 
 	destgroupkv := tres.Responses[2].GetResponseRange().Kvs[0]
-	var destgroup SlotGroup.CacheGroupItem
+	var destgroup CacheGroupItem
 	if json.Unmarshal(destgroupkv.Value, &destgroup) != nil {
 		return false, errors.New("Unmarshal group value is error!")
 	}
@@ -745,11 +724,11 @@ func (server *ManagerServer) MoveSlotToGroup (slotid, srcid, destid uint64) (boo
 		return false, errors.New("The slot dest groupid is incorrect!")
 	}
 
-	if ret, err := SlotGroup.DeleteSlotFromGroup(&slot, &group); err != nil {
+	if ret, err := DeleteSlotFromGroup(&slot, &group); err != nil {
 		return ret, err
 	}
 
-	if ret, err := SlotGroup.AddSlotToGroup(&slot, &destgroup); err != nil {
+	if ret, err := AddSlotToGroup(&slot, &destgroup); err != nil {
 		return ret, err
 	}
 
@@ -817,7 +796,7 @@ func (server *ManagerServer) StartMoveSlotToGroup (slotid, srcid, destid uint64)
 	}
 
 	slotkv := tres.Responses[0].GetResponseRange().Kvs[0]
-	var slot SlotGroup.SlotItem
+	var slot SlotItem
 	if json.Unmarshal(slotkv.Value, &slot) != nil {
 		return false, errors.New("Unmarshal slot value is error!")
 	}
@@ -827,18 +806,18 @@ func (server *ManagerServer) StartMoveSlotToGroup (slotid, srcid, destid uint64)
 	}
 
 	groupkv := tres.Responses[1].GetResponseRange().Kvs[0]
-	var group SlotGroup.CacheGroupItem
+	var group CacheGroupItem
 	if json.Unmarshal(groupkv.Value, &group) != nil {
 		return false, errors.New("Unmarshal group value is error!")
 	}
 
 	destgroupkv := tres.Responses[2].GetResponseRange().Kvs[0]
-	var destgroup SlotGroup.CacheGroupItem
+	var destgroup CacheGroupItem
 	if json.Unmarshal(destgroupkv.Value, &destgroup) != nil {
 		return false, errors.New("Unmarshal group value is error!")
 	}
 
-	if ret, err := SlotGroup.SlotInGroup(&slot, &group); err != nil {
+	if ret, err := SlotInGroup(&slot, &group); err != nil {
 		return ret, err
 	}
 
